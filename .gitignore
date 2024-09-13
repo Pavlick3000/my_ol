@@ -5,4 +5,4 @@ __pycache__
 .DS_Store
 .env
 models_from_bd.py
-./idea
+.idea/
