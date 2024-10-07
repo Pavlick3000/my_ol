@@ -25,7 +25,7 @@ class ProductionTypeBook(models.Model):
 
 class NomencBook(models.Model):
     db_id = models.BinaryField(db_column='_IDRRef', editable=False)
-    # тест
+
     name = models.CharField(db_column='_Description', max_length=100, db_collation='Cyrillic_General_CI_AS') # Наименование
     articles = models.CharField(db_column='_Fld3194', default='', max_length=25, db_collation='Cyrillic_General_CI_AS', blank=True, null=True) # Артикул
     comment = models.TextField(db_column='_Fld3211', db_collation='Cyrillic_General_CI_AS', blank=True, null=True) # Поле "Комментарий"
