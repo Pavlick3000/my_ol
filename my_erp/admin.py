@@ -1,10 +1,12 @@
 from django.contrib import admin
 from .forms import NomencBookAdminForm
 from .models import NomencBook, ProductionTypeBook, BasicUnitBook
+from my_erp.models import NomencUnitBook
+
 
 class NomencBookAdmin(admin.ModelAdmin):
     form = NomencBookAdminForm
-    list_display = ('name', 'field_code', 'type_of_reproduction_display', 'basic_unit_display')
+    list_display = ('name', 'field_code', 'type_of_reproduction_display', 'basic_unit_display', 'field_fld3222rref')
 
     def save_model(self, request, obj, form, change):
         obj.write()
@@ -18,3 +20,6 @@ class BasicUnitBookAdmin(admin.ModelAdmin):
 admin.site.register(ProductionTypeBook, ProductionTypeAdmin)
 admin.site.register(NomencBook, NomencBookAdmin)
 admin.site.register(BasicUnitBook, BasicUnitBookAdmin)
+
+
+
