@@ -38,7 +38,6 @@ class NomencBookAdminForm(forms.ModelForm):
     def save(self, commit=True):
         self.instance.write()
 
-        print("Запущен метод save")
         # Проверяем, существует ли запись в NomencUnitBook
         if not NomencUnitBook.objects.filter(field_ownerid_rrref=self.instance.db_id).exists():
             print("Создание новой записи в NomencUnitBook")
@@ -54,9 +53,6 @@ class NomencBookAdminForm(forms.ModelForm):
 
             self.instance.basic_unit_1 = unit_record.db_id
             self.instance.basic_unit_2 = unit_record.db_id
-
-        else:
-            print("Проверка не пройдена")
 
         # Сохраняем изменения в NomencBook
         instance = super().save(commit=False)

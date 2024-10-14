@@ -4,6 +4,5 @@ __pycache__
 ./venv
 .DS_Store
 .env
-models_from_bd.py
 .idea/
 Different_tests/
