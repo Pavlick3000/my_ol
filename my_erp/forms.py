@@ -1,5 +1,7 @@
 from django import forms
-from .models import NomencBook, ProductionTypeBook, BasicUnitBook
+from .models import NomencBook, ProductionTypeBook, BasicUnitBook, NomencUnitBook
+import uuid
+
 
 class NomencBookAdminForm(forms.ModelForm):
     class Meta:
@@ -32,3 +34,32 @@ class NomencBookAdminForm(forms.ModelForm):
         if data:
             return bytes.fromhex(data)
         return None
+
+    def save(self, commit=True):
+        self.instance.write()
+
+        print("Запущен метод save")
+        # Проверяем, существует ли запись в NomencUnitBook
+        if not NomencUnitBook.objects.filter(field_ownerid_rrref=self.instance.db_id).exists():
+            print("Создание новой записи в NomencUnitBook")
+            # Если записи нет, создаем новую запись в NomencUnitBook
+            unit_record = NomencUnitBook.objects.create(
+                db_id=uuid.uuid4().bytes,  # Генерация нового UUID для db_id в формате bytes
+                field_ownerid_rrref=self.instance.db_id,  # Используем db_id из NomencBook
+                field_fld2487rref=self.instance.basic_unit,  # Используем basic_unit из NomencBook
+                field_description=BasicUnitBook.objects.get(db_id=self.instance.basic_unit).name,
+                # Получаем name из BasicUnitBook
+                field_code=NomencUnitBook.generate_new_code(),  # Генерация нового значения для field_code
+            )
+
+            self.instance.basic_unit_1 = unit_record.db_id
+            self.instance.basic_unit_2 = unit_record.db_id
+
+        else:
+            print("Проверка не пройдена")
+
+        # Сохраняем изменения в NomencBook
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+        return instance

@@ -1,5 +1,6 @@
 import uuid
 from django.db import models, transaction
+import binascii
 
 class BasicUnitBook(models.Model):
     db_id = models.BinaryField(db_column='_IDRRef', unique=True)
@@ -45,8 +46,8 @@ class NomencBook(models.Model):
     type_of_reproduction = models.BinaryField(db_column='_Fld3203RRef', max_length=16, blank=True, null=True, editable=True)  # Поле содержащее "Вид воспроизводства"
 
     basic_unit = models.BinaryField(db_column='_Fld3207RRef', blank=True, null=True, editable=True)  # Поле содержащее "Базовая единица измерения"
-    basic_unit_1 = models.BinaryField(db_column='_Fld3206RRef', blank=True, null=True, editable=False)  # Поле содержащее "Единица хранения остатков": = "Базовая единица измерения"
-    basic_unit_2 = models.BinaryField(db_column='_Fld3205RRef', blank=True, null=True, editable=False)  # Поле содержащее "Единица для отчетов": = "Базовая единица измерения"
+    basic_unit_1 = models.BinaryField(db_column='_Fld3206RRef', editable=False)  # Поле содержащее "Единица хранения остатков": = "Базовая единица измерения"
+    basic_unit_2 = models.BinaryField(db_column='_Fld3205RRef', editable=False)  # Поле содержащее "Единица для отчетов": = "Базовая единица измерения"
 
     # Поля константы:
     field_ismetadata = models.BinaryField(db_column='_IsMetadata', default=b'\x00', editable=False)
@@ -131,11 +132,12 @@ class NomencBook(models.Model):
         except BasicUnitBook.DoesNotExist:
             return None
 
-    def write(self, *args, **kwargs):
+    def write(self, basic_unit_1=None, basic_unit_2=None, *args, **kwargs):
 
         # Формируем значение поля db_id
         if not self.db_id:
-            self.db_id = uuid.UUID(bytes=uuid.uuid4().bytes).bytes
+            # self.db_id = uuid.UUID(bytes=uuid.uuid4().bytes).bytes
+            self.db_id = uuid.uuid4().bytes
 
         # Формируем значение поля field_code
         if not self.field_code:
@@ -151,24 +153,6 @@ class NomencBook(models.Model):
                 self.field_code = str(new_code).zfill(11)
 
         super().save(*args, **kwargs)
-
-        # Формируем значения для basic_unit_1 и basic_unit_2, через создание новой записи в NomencUnitBook
-        if not NomencUnitBook.objects.filter(field_ownerid_rrref=self.db_id).exists():
-            # Если записи нет, создаем новую запись в NomencUnitBook
-            unit_record = NomencUnitBook.objects.create(
-                db_id=uuid.UUID(bytes=uuid.uuid4().bytes).bytes,  # Генерация нового UUID для db_id
-                field_ownerid_rrref=self.db_id,  # Передаем значение db_id из NomencBook
-                field_fld2487rref=self.basic_unit,  # Передаем значение basic_unit из NomencBook
-                field_description=BasicUnitBook.objects.get(db_id=self.basic_unit).name, # Получаем значение name из BasicUnitBook
-                field_code=NomencUnitBook.generate_new_code(),  # Генерация нового значения для field_code
-            )
-
-            # Обновляем поля basic_unit_1 и basic_unit_2 в NomencBook значением db_id новой записи в NomencUnitBook
-            self.basic_unit_1 = unit_record.db_id
-            self.basic_unit_2 = unit_record.db_id
-
-            # Сохраняем изменения в NomencBook
-            super().save(*args, **kwargs)
 
 class NomencUnitBook(models.Model):
     db_id = models.BinaryField(db_column='_IDRRef', editable=False) # для новых записей сюда генериться значение uuid, которое потом попадает в basic_unit_1 и basic_unit_2 NomencBook
