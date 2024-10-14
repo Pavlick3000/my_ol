@@ -40,7 +40,6 @@ class NomencBookAdminForm(forms.ModelForm):
 
         # Проверяем, существует ли запись в NomencUnitBook
         if not NomencUnitBook.objects.filter(field_ownerid_rrref=self.instance.db_id).exists():
-            print("Создание новой записи в NomencUnitBook")
             # Если записи нет, создаем новую запись в NomencUnitBook
             unit_record = NomencUnitBook.objects.create(
                 db_id=uuid.uuid4().bytes,  # Генерация нового UUID для db_id в формате bytes
