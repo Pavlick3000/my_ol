@@ -1,6 +1,10 @@
 from django.urls import path
-from . import views
+from my_erp.views import catalog, editCatalog
+
+app_name = 'catalog'
 
 urlpatterns = [
-    path('', views.table_list, name='table_list'),
+    path('', catalog, name='index'),
+    path('editCatalog/<int:id>/', editCatalog, name='editCatalog'),
 ]
+

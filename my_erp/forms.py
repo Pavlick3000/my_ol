@@ -1,19 +1,31 @@
 from django import forms
-from .models import NomencBook, ProductionTypeBook, BasicUnitBook, NomencUnitBook
+from my_erp.models import NomencBook, ProductionTypeBook, BasicUnitBook, NomencUnitBook
 import uuid
 
 
-class NomencBookAdminForm(forms.ModelForm):
+class NomencBookForm(forms.ModelForm):
+    name = forms.CharField(widget=forms.TextInput(attrs={
+        'class': 'w-full px-3 py-2 mb-4 border rounded', 'placeholder': 'Введите наименование'
+    }))
+    type_of_reproduction = forms.ChoiceField(widget=forms.Select(attrs={
+        'class': 'block mb-2 text-sm font-medium text-gray-700'
+    }))
+    basic_unit = forms.ChoiceField(widget=forms.Select(attrs={
+        'class': 'block mb-2 text-sm font-medium text-gray-700'
+    }))
+    # field_code = forms.CharField
+    # id = forms.IntegerField
+
     class Meta:
         model = NomencBook
-        fields = '__all__'  # Вы можете указать конкретные поля, если нужно
+        fields = ('name','type_of_reproduction', 'basic_unit')  # Вы можете указать конкретные поля, если нужно
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Определяем поле выбора для type_of_reproduction
         self.fields['type_of_reproduction'] = forms.ChoiceField(
-            choices=[(prod.reproduction.hex().upper(), prod.name) for prod in ProductionTypeBook.objects.all()],
+            choices=[(prod.reproduction.hex().upper(), prod.name) for prod in ProductionTypeBook.objects.all().order_by('-id')],
             required=False,
             label="Тип воспроизводства")
 

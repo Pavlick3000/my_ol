@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer components {
+    .my-table {@apply w-9/12 border-collapse}
+    .my-table th, td {@apply border-b border-solid border-zinc-400}
+    /*.my-table td {@apply border border-solid border-amber-500}*/
+    .my-table tr:nth-child(even) {@apply bg-slate-400/25}
+    }

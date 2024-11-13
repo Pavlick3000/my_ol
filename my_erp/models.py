@@ -1,6 +1,5 @@
 import uuid
 from django.db import models, transaction
-import binascii
 
 class BasicUnitBook(models.Model):
     db_id = models.BinaryField(db_column='_IDRRef', unique=True)
@@ -9,6 +8,8 @@ class BasicUnitBook(models.Model):
     class Meta:
         managed = False
         db_table = '_Reference123'
+        verbose_name = 'Базовые единицы измерения'  # Имя модели в админке
+        verbose_name_plural = 'Базовые единицы измерения'  # Множественное число в админке
 
     def __str__(self):
         return self.name
@@ -20,6 +21,8 @@ class ProductionTypeBook(models.Model):
     class Meta:
         managed = False
         db_table = 'my_type_of_production_N'
+        verbose_name = 'Вид воспроизводства'  # Имя модели в админке
+        verbose_name_plural = 'Вид воспроизводства'  # Множественное число в админке
 
     def __str__(self):
         return self.name
@@ -34,14 +37,14 @@ class NomencBook(models.Model):
 
     # ____ Поля для пользователя ____
         # Не зависят от field_folder
-    name = models.CharField(db_column='_Description', max_length=100, db_collation='Cyrillic_General_CI_AS') # Наименование
+    name = models.CharField(db_column='_Description', max_length=100, db_collation='Cyrillic_General_CI_AS', verbose_name='Наименование') # Наименование
     group = models.BinaryField(db_column='_ParentIDRRef', max_length=16, default=b'\x00' * 16, editable=False)  # TODO Тут необходимо реализовать возможность выбора "группы номенклатуры" из списка! Надо будет убрать "editable=False"
     view = models.BinaryField(db_column='_Fld3204RRef', max_length=16, default=b'\xBA\x80\x0C\xC4\x7A\x22\x9A\x23\x11\xE6\xC8\x40\x91\x63\x13\x34', editable=False)  # TODO Тут необходимо реализовать возможность выбора "вида номенклатуры" из списка! Надо будет убрать "editable=False"
         # Поля со значением NULL, если если field_folder=0х00
-    articles = models.TextField(db_column='_Fld3194', default='', max_length=25, db_collation='Cyrillic_General_CI_AS', blank=True, null=True) # Артикул
-    comment = models.TextField(db_column='_Fld3211', db_collation='Cyrillic_General_CI_AS', blank=True, null=True) # Поле "Комментарий"
-    full_name = models.TextField(db_column='_Fld3195', db_collation='Cyrillic_General_CI_AS', blank=True, null=True) # TODO поле "Полное наименование". Реализовать галочку, если стоит, то значение равно name
-    description = models.TextField(db_column='_Fld3231', default='', editable=False, db_collation='Cyrillic_General_CI_AS', blank=True, null=True)  # TODO Вкладка "Описание" - поле с описание. Можно реализовать место ввода, отключив  editable=False.
+    articles = models.TextField(db_column='_Fld3194', default='', max_length=25, db_collation='Cyrillic_General_CI_AS', blank=True, null=True, verbose_name='Артикур') # Артикул
+    comment = models.TextField(db_column='_Fld3211', db_collation='Cyrillic_General_CI_AS', blank=True, null=True, verbose_name='Комментарий') # Поле "Комментарий"
+    full_name = models.TextField(db_column='_Fld3195', db_collation='Cyrillic_General_CI_AS', blank=True, null=True, verbose_name='Полное наименование') # TODO поле "Полное наименование". Реализовать галочку, если стоит, то значение равно name
+    description = models.TextField(db_column='_Fld3231', default='', editable=False, db_collation='Cyrillic_General_CI_AS', blank=True, null=True, verbose_name='Описание')  # TODO Вкладка "Описание" - поле с описание. Можно реализовать место ввода, отключив  editable=False.
 
     type_of_reproduction = models.BinaryField(db_column='_Fld3203RRef', max_length=16, blank=True, null=True, editable=True)  # Поле содержащее "Вид воспроизводства"
 
@@ -113,6 +116,8 @@ class NomencBook(models.Model):
     class Meta:
         managed = False
         db_table = '_Reference175'
+        verbose_name = 'Номенклатура'  # Имя модели в админке
+        verbose_name_plural = 'Номенклатура'  # Множественное число в админке
 
     @property
     def type_of_reproduction_display(self):
@@ -132,11 +137,10 @@ class NomencBook(models.Model):
         except BasicUnitBook.DoesNotExist:
             return None
 
-    def write(self, basic_unit_1=None, basic_unit_2=None, *args, **kwargs):
+    def write(self, *args, **kwargs):
 
         # Формируем значение поля db_id
         if not self.db_id:
-            # self.db_id = uuid.UUID(bytes=uuid.uuid4().bytes).bytes
             self.db_id = uuid.uuid4().bytes
 
         # Формируем значение поля field_code

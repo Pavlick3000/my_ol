@@ -1,0 +1,145 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{ title }}</title>
+        <link href="{% static 'css/output.css' %}" rel="stylesheet">
+    </head>
+    
+    <body class="bg-white">
+        <!-- Шапка -->
+        <div class="bg-blue-300 h-28 w-full">
+            <div class="grid grid-cols-2 justify-between items-center">
+                <h1 class="text-2xl font-bold"><a href="{% url 'index' %}">Назад на главную</a></h1>
+                <h2 class="text-xl">Заголовок 2</h2>
+            </div>
+        </div>
+    
+        <main>
+            <button onclick="toggleModal()" class="px-4 py-2 bg-blue-500 text-white rounded">Добавить запись</button>  
+            <button onclick="toggleEditModal()" class="px-4 py-2 bg-blue-500 text-white rounded">Изменить запись</button>  
+    
+            <!-- Форма "Добавить запись" -->
+            <div id="modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center  hidden">
+                <div class="bg-white p-6 rounded-lg w-full max-w-md">
+                    <h2 class="text-xl font-bold mb-4">Заполните форму</h2>
+                    <!-- Форма -->
+                    <form action="{% url 'catalog:index' %}" method="post">
+                    {% csrf_token %}
+                    
+                        <label class="block mb-2 text-sm font-medium text-gray-700">
+                            Наименование
+                        </label>
+                        {{ form.name }}
+
+                        <label class="block mb-2 text-sm font-medium text-gray-700">
+                            Вид воспроизводства
+                        </label>
+                        {{ form.type_of_reproduction }}
+                    
+                        <label class="block mb-2 text-sm font-medium text-gray-700">
+                            Единица измерения
+                        </label>
+                        {{ form.basic_unit }}
+                    
+                        <div class="flex justify-center space-x-2 mt-4">
+                            <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Отправить</button>
+                            <button type="button" onclick="toggleModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded">Закрыть</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        
+            <!-- Форма "Изменить запись" -->
+            <div id="editmodal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+                <div class="bg-white p-6 rounded-lg w-full max-w-md">
+                    <h2 class="text-xl font-bold mb-4">Редактировать товар</h2>
+                    <form id="editForm" method="post">
+                        {% csrf_token %}
+            
+                        <!-- Поле для ID -->
+                        <label for="elementId" class="block mb-2 text-sm font-medium text-gray-700">ID</label>
+                        <input id="elementId" name="elementId" type="text" class="block w-full p-2 border rounded mb-4" readonly>
+
+                        <!-- Поле для Наименования -->
+                        <label for="elementName" class="block mb-2 text-sm font-medium text-gray-700">Наименование</label>
+                        <input id="elementName" name="name" type="text" class="block w-full p-2 border rounded mb-4">
+
+                        <!-- Поле для Кода -->
+                        <label for="elementFieldCode" class="block mb-2 text-sm font-medium text-gray-700">Код</label>
+                        <input id="elementFieldCode" name="field_code" type="text" class="block w-full p-2 border rounded mb-4">
+
+                        <!-- Поле для Вида воспроизводства -->
+                        <label for="elementTypeOfReproduction" class="block mb-2 text-sm font-medium text-gray-700">Вид воспроизводства</label>
+                        <input id="elementTypeOfReproduction" name="type_of_reproduction" type="text" class="block w-full p-2 border rounded mb-4">
+
+                        <!-- Поле для Единицы измерения -->
+                        <label for="elementBasicUnit" class="block mb-2 text-sm font-medium text-gray-700">Единица измерения</label>
+                        <input id="elementBasicUnit" name="basic_unit" type="text" class="block w-full p-2 border rounded mb-4">
+
+                        <!-- Кнопки -->
+                        <div class="flex justify-center space-x-2 mt-4">
+                            <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Отправить</button>
+                            <button type="button" onclick="toggleEditModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded">Закрыть</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+                    
+            <!-- Таблица -->
+            <div class="container mx-auto px-4">
+                <table class="my-table mt-4" id="productTable">
+                    <thead>
+                        <tr>
+                            <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(0)">id</th>
+                            <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(1)">Код</th>
+                            <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(2)">Наименование</th>
+                            <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(3)">Вид воспроизводства</th>            
+                            <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(4)">Ед.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                            <tr class="cursor-pointer hover:text-red-400" 
+                                data-id="{{ product.id }}" 
+                                data-field-code="{{ product.field_code }}" 
+                                data-name="{{ product.name }}" 
+                                data-type-of-reproduction="{{ product.type_of_reproduction_display }}" 
+                                data-basic-unit="{{ product.basic_unit_display }}"
+                                data-url="{% url 'catalog:editCatalog' id=product.id %}"
+                                onclick="toggleEditModal(this)">
+                            
+                                <td class="font-light">{{ product.id }}</td>
+                                <td>{{ product.field_code }}</td>
+                                <td class="font-medium">{{ product.name }}</td>
+                                <td>{{ product.type_of_reproduction_display }}</td>
+                                <td>{{ product.basic_unit_display }}</td>
+                            </tr>
+                        {% endfor %}            
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Выпадающий список по ПКМ -->
+            <div id="actionModal" class="fixed inset-0 hidden">
+                <div class="bg-white rounded-lg shadow-lg p-4 max-w-fit" style="position: absolute;">
+                    <ul class="list-none space-y-2">
+                        <li>
+                            <button id="editRecord" class="w-full text-left text-blue-500 hover:underline">Изменить</button>
+                        </li>
+                        <li>
+                            <button id="deleteRecord" class="w-full text-left text-red-500 hover:underline">Удалить!!!</button>
+                        </li>
+                    </ul>
+                    <button class="close-modal mt-4 text-sm text-gray-500 hover:underline">Закрыть</button>
+                </div>
+            </div>
+        
+        </main>
+        
+        <script src="{% static 'js/main.js' %}"></script>
+    
+    </body>
+</html>

@@ -6,3 +6,5 @@ __pycache__
 .env
 .idea/
 Different_tests/
+/node_modules/
+/src/css/output.css
