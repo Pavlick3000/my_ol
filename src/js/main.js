@@ -69,8 +69,9 @@ function toggleModal() {
 }
 
 // Функция для открытия и закрытия модального окна (Форма "Изменить запись")
-function toggleEditModal(row = null) {
+async function toggleEditModal(row = null) {
     const modal = document.getElementById('editmodal');
+    // const selectedReproduction = document.querySelector('#reproduction-select').getAttribute('data-selected-value');
 
     if (row) {
         // Получаем данные из атрибутов data-*
@@ -85,12 +86,15 @@ function toggleEditModal(row = null) {
         document.getElementById("elementId").value = id;
         document.getElementById("elementFieldCode").value = fieldCode;
         document.getElementById("elementName").value = name;
-        document.getElementById("elementTypeOfReproduction").value = typeOfReproduction;
-        document.getElementById("elementBasicUnit").value = basicUnit;
+        // document.getElementById("elementTypeOfReproduction").value = typeOfReproduction;
+        // document.getElementById("elementBasicUnit").value = basicUnit;
 
         // Обновляем action формы
         const form = document.getElementById("editForm");
         form.action = url;
+
+        // Загружаем опции для выпадающих списков
+        await loadSelectOptions(typeOfReproduction, basicUnit);
     }
 
     // Открываем/закрываем модальное окно
@@ -127,6 +131,47 @@ document.getElementById("editForm").addEventListener("submit", async function (e
         alert("Произошла ошибка при отправке формы.");
     }
 });
+
+
+// Для заполнения выпадающих списков в окне редактирования
+async function loadSelectOptions(selectedReproduction, selectedBasicUnit) {
+    const reproductionSelect = document.getElementById("elementTypeOfReproduction");
+    const basicUnitSelect = document.getElementById("elementBasicUnit");
+
+    // Очищаем текущие опции
+    reproductionSelect.innerHTML = '';
+    basicUnitSelect.innerHTML = '';
+
+    try {
+        const response = await fetch('getSelectOptions/');
+        const data = await response.json();
+
+        // Заполняем список "Вид воспроизводства"
+        data.reproduction_choices.forEach(choice => {
+            const option = document.createElement('option');
+            option.value = choice.reproduction;
+            option.text = choice.name;
+            if (choice.name === selectedReproduction) {
+                option.selected = true;
+            }
+            reproductionSelect.appendChild(option);
+        });
+
+        // Заполняем список "Единица измерения"
+        data.basic_units.forEach(unit => {
+            const option = document.createElement('option');
+            option.value = unit.db_id;
+            option.text = unit.name;
+            if (unit.name === selectedBasicUnit) {
+                option.selected = true;
+            }
+            basicUnitSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Ошибка загрузки опций:", error);
+        alert("Не удалось загрузить данные для выпадающих списков.");
+    }
+}
 
 // Сортировка по нажатию на имя столбца
 function sortTable(columnIndex) {

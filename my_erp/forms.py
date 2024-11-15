@@ -13,8 +13,6 @@ class NomencBookForm(forms.ModelForm):
     basic_unit = forms.ChoiceField(widget=forms.Select(attrs={
         'class': 'block mb-2 text-sm font-medium text-gray-700'
     }))
-    # field_code = forms.CharField
-    # id = forms.IntegerField
 
     class Meta:
         model = NomencBook
@@ -70,3 +68,12 @@ class NomencBookForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
+
+# class ProductionTypeBookForm (forms.ModelForm):
+#     # name = forms.CharField(widget=forms.TextInput(attrs={
+#     #     'class': 'w-full px-3 py-2 mb-4 border rounded', 'placeholder': 'Введите наименование'
+#     # }))
+#
+#     class Meta:
+#         model = ProductionTypeBook
+#         fields = '__all__'

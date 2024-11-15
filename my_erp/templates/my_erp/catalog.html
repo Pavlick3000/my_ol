@@ -19,7 +19,7 @@
     
         <main>
             <button onclick="toggleModal()" class="px-4 py-2 bg-blue-500 text-white rounded">Добавить запись</button>  
-            <button onclick="toggleEditModal()" class="px-4 py-2 bg-blue-500 text-white rounded">Изменить запись</button>  
+            <button onclick="toggleEditModal()" class="px-4 py-2 bg-blue-500 text-white rounded">Изменить запись</button>
     
             <!-- Форма "Добавить запись" -->
             <div id="modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center  hidden">
@@ -58,26 +58,32 @@
                     <h2 class="text-xl font-bold mb-4">Редактировать товар</h2>
                     <form id="editForm" method="post">
                         {% csrf_token %}
-            
+
                         <!-- Поле для ID -->
                         <label for="elementId" class="block mb-2 text-sm font-medium text-gray-700">ID</label>
                         <input id="elementId" name="elementId" type="text" class="block w-full p-2 border rounded mb-4" readonly>
-
+                        
+                        <!-- Поле для Кода -->
+                        <label for="elementFieldCode" class="block mb-2 text-sm font-medium text-gray-700">Код</label>
+                        <input id="elementFieldCode" name="field_code" type="text" class="block w-full p-2 border rounded mb-4" readonly>
+                        
                         <!-- Поле для Наименования -->
                         <label for="elementName" class="block mb-2 text-sm font-medium text-gray-700">Наименование</label>
                         <input id="elementName" name="name" type="text" class="block w-full p-2 border rounded mb-4">
-
-                        <!-- Поле для Кода -->
-                        <label for="elementFieldCode" class="block mb-2 text-sm font-medium text-gray-700">Код</label>
-                        <input id="elementFieldCode" name="field_code" type="text" class="block w-full p-2 border rounded mb-4">
-
+                        
                         <!-- Поле для Вида воспроизводства -->
                         <label for="elementTypeOfReproduction" class="block mb-2 text-sm font-medium text-gray-700">Вид воспроизводства</label>
-                        <input id="elementTypeOfReproduction" name="type_of_reproduction" type="text" class="block w-full p-2 border rounded mb-4">
+{#                        <input id="elementTypeOfReproduction" name="type_of_reproduction" type="text" class="block w-full p-2 border rounded mb-4">#}
+                        <select id="elementTypeOfReproduction" name="type_of_reproduction" class="block w-full p-2 border rounded mb-4">
+                        <!-- Опции будут добавлены динамически через JavaScript -->
+                        </select>
 
                         <!-- Поле для Единицы измерения -->
                         <label for="elementBasicUnit" class="block mb-2 text-sm font-medium text-gray-700">Единица измерения</label>
-                        <input id="elementBasicUnit" name="basic_unit" type="text" class="block w-full p-2 border rounded mb-4">
+{#                        <input id="elementBasicUnit" name="basic_unit" type="text" class="block w-full p-2 border rounded mb-4">#}
+                        <select id="elementBasicUnit" name="basic_unit" type="text" class="block w-full p-2 border rounded mb-4">
+                        <!-- Опции будут добавлены динамически через JavaScript -->
+                        </select>
 
                         <!-- Кнопки -->
                         <div class="flex justify-center space-x-2 mt-4">
@@ -87,7 +93,7 @@
                     </form>
                 </div>
             </div>
-                    
+
             <!-- Таблица -->
             <div class="container mx-auto px-4">
                 <table class="my-table mt-4" id="productTable">
@@ -102,15 +108,15 @@
                     </thead>
                     <tbody>
                         {% for product in products %}
-                            <tr class="cursor-pointer hover:text-red-400" 
-                                data-id="{{ product.id }}" 
-                                data-field-code="{{ product.field_code }}" 
-                                data-name="{{ product.name }}" 
-                                data-type-of-reproduction="{{ product.type_of_reproduction_display }}" 
+                            <tr class="cursor-pointer hover:text-red-400"
+                                data-id="{{ product.id }}"
+                                data-field-code="{{ product.field_code }}"
+                                data-name="{{ product.name }}"
+                                data-type-of-reproduction="{{ product.type_of_reproduction_display }}"
                                 data-basic-unit="{{ product.basic_unit_display }}"
                                 data-url="{% url 'catalog:editCatalog' id=product.id %}"
                                 onclick="toggleEditModal(this)">
-                            
+
                                 <td class="font-light">{{ product.id }}</td>
                                 <td>{{ product.field_code }}</td>
                                 <td class="font-medium">{{ product.name }}</td>
@@ -139,7 +145,29 @@
         
         </main>
         
-        <script src="{% static 'js/main.js' %}"></script>
-    
+        <script src="{% static 'js/main.js' %}">
+            
+            // Заполняем выпадающий список "Вид воспроизводства"
+const reproductionSelect = document.getElementById("elementTypeOfReproduction");
+reproductionSelect.innerHTML = ''; // Очищаем текущие опции
+
+// Добавляем опцию по умолчанию
+const defaultOption = document.createElement('option');
+defaultOption.value = '';
+defaultOption.text = '-- Выберите вид воспроизводства --';
+reproductionSelect.appendChild(defaultOption);
+
+data.reproduction_choices.forEach(choice => {
+    const option = document.createElement('option');
+    option.value = choice.id;
+    option.text = choice.name;
+    if (choice.id === data.product.type_of_reproduction) {
+        option.selected = true;
+    }
+    reproductionSelect.appendChild(option);
+});
+            
+        </script>
+
     </body>
 </html>
