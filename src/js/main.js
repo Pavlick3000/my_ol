@@ -86,8 +86,8 @@ async function toggleEditModal(row = null) {
         document.getElementById("elementId").value = id;
         document.getElementById("elementFieldCode").value = fieldCode;
         document.getElementById("elementName").value = name;
-        // document.getElementById("elementTypeOfReproduction").value = typeOfReproduction;
-        // document.getElementById("elementBasicUnit").value = basicUnit;
+        // document.getElementById("elementTypeOfReproduction").value = typeOfReproduction; Эти ребята тут : async function loadSelectOptions
+        // document.getElementById("elementBasicUnit").value = basicUnit; Эти ребята тут : async function loadSelectOptions
 
         // Обновляем action формы
         const form = document.getElementById("editForm");
@@ -101,6 +101,7 @@ async function toggleEditModal(row = null) {
     modal.classList.toggle('hidden');
 }
 
+// JSON
 document.getElementById("editForm").addEventListener("submit", async function (event) {
     event.preventDefault(); // Предотвращаем стандартное поведение формы
 
@@ -131,7 +132,6 @@ document.getElementById("editForm").addEventListener("submit", async function (e
         alert("Произошла ошибка при отправке формы.");
     }
 });
-
 
 // Для заполнения выпадающих списков в окне редактирования
 async function loadSelectOptions(selectedReproduction, selectedBasicUnit) {
@@ -209,6 +209,65 @@ function sortTable(columnIndex) {
                 dir = "desc";
                 switching = true;
             }
+        }
+    }
+}
+
+// Функция подтверждения удаления
+function confirmDeletion() {
+    const elementId = document.getElementById("elementId").value;
+
+    if (confirm("Вы уверены, что хотите удалить эту запись?")) {
+        fetch(`/catalog/deleteRecord/${elementId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken') // Получение CSRF-токена
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                alert("Запись успешно удалена!");
+                toggleEditModal();
+                window.location.reload(); // Обновляем страницу
+            } else {
+                alert("Ошибка при удалении записи.");
+            }
+        })
+        .catch(error => {
+            console.error("Ошибка:", error);
+            alert("Ошибка при удалении записи.");
+        });
+    }
+}
+// Функция для получения CSRF-токена
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Поле поиск
+function filterTableByName() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase();
+    const table = document.getElementById('productTable');
+    const rows = table.getElementsByTagName('tr');
+
+    for (let i = 1; i < rows.length; i++) {
+        const cell = rows[i].getElementsByTagName('td')[2]; // Индекс 2 — это колонка "Наименование"
+        if (cell) {
+            const textValue = cell.textContent || cell.innerText;
+            rows[i].style.display = textValue.toLowerCase().includes(filter) ? '' : 'none';
         }
     }
 }

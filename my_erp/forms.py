@@ -23,7 +23,7 @@ class NomencBookForm(forms.ModelForm):
 
         # Определяем поле выбора для type_of_reproduction
         self.fields['type_of_reproduction'] = forms.ChoiceField(
-            choices=[(prod.reproduction.hex().upper(), prod.name) for prod in ProductionTypeBook.objects.all().order_by('-id')],
+            choices=[(prod.reproduction.hex().upper(), prod.name) for prod in ProductionTypeBook.objects.filter(reproduction__isnull=False).order_by('-id')],
             required=False,
             label="Тип воспроизводства")
 
@@ -35,7 +35,7 @@ class NomencBookForm(forms.ModelForm):
 
     def clean_type_of_reproduction(self):
         data = self.cleaned_data.get('type_of_reproduction')
-        if data:
+        if data is not None:
             return bytes.fromhex(data)
         return None
 
@@ -68,12 +68,3 @@ class NomencBookForm(forms.ModelForm):
         if commit:
             instance.save()
         return instance
-
-# class ProductionTypeBookForm (forms.ModelForm):
-#     # name = forms.CharField(widget=forms.TextInput(attrs={
-#     #     'class': 'w-full px-3 py-2 mb-4 border rounded', 'placeholder': 'Введите наименование'
-#     # }))
-#
-#     class Meta:
-#         model = ProductionTypeBook
-#         fields = '__all__'

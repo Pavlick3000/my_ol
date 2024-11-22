@@ -15,8 +15,8 @@ class BasicUnitBook(models.Model):
         return self.name
 
 class ProductionTypeBook(models.Model):
-    reproduction = models.BinaryField (db_column='Code', unique=True)
-    name = models.CharField(db_column='Name', max_length=100)
+    reproduction = models.BinaryField (db_column='Code', unique=True, null=True)
+    name = models.CharField(db_column='Name', max_length=100, null=True)
 
     class Meta:
         managed = False
@@ -159,7 +159,7 @@ class NomencBook(models.Model):
         super().save(*args, **kwargs)
 
 class NomencUnitBook(models.Model):
-    db_id = models.BinaryField(db_column='_IDRRef', editable=False) # для новых записей сюда генериться значение uuid, которое потом попадает в basic_unit_1 и basic_unit_2 NomencBook
+    db_id = models.BinaryField(db_column='_IDRRef', editable=False) # для новых записей сюда генерится значение uuid, которое потом попадает в basic_unit_1 и basic_unit_2 NomencBook
     field_marked = models.BinaryField(db_column='_Marked', default=b'\x00', editable=False) # Маркер "На удаление"
     field_ismetadata = models.BinaryField(db_column='_IsMetadata', default=b'\x00', editable=False)
     field_ownerid_type = models.BinaryField( db_column='_OwnerID_TYPE', default=b'\x08', editable=False)

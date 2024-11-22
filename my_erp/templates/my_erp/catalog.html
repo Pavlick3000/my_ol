@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_filters %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -10,7 +11,7 @@
     
     <body class="bg-white">
         <!-- Шапка -->
-        <div class="bg-blue-300 h-28 w-full">
+        <div class="bg-blue-300 h-20 w-full">
             <div class="grid grid-cols-2 justify-between items-center">
                 <h1 class="text-2xl font-bold"><a href="{% url 'index' %}">Назад на главную</a></h1>
                 <h2 class="text-xl">Заголовок 2</h2>
@@ -62,25 +63,23 @@
                         <!-- Поле для ID -->
                         <label for="elementId" class="block mb-2 text-sm font-medium text-gray-700">ID</label>
                         <input id="elementId" name="elementId" type="text" class="block w-full p-2 border rounded mb-4" readonly>
-                        
+
                         <!-- Поле для Кода -->
                         <label for="elementFieldCode" class="block mb-2 text-sm font-medium text-gray-700">Код</label>
                         <input id="elementFieldCode" name="field_code" type="text" class="block w-full p-2 border rounded mb-4" readonly>
-                        
+
                         <!-- Поле для Наименования -->
                         <label for="elementName" class="block mb-2 text-sm font-medium text-gray-700">Наименование</label>
                         <input id="elementName" name="name" type="text" class="block w-full p-2 border rounded mb-4">
-                        
+
                         <!-- Поле для Вида воспроизводства -->
                         <label for="elementTypeOfReproduction" class="block mb-2 text-sm font-medium text-gray-700">Вид воспроизводства</label>
-{#                        <input id="elementTypeOfReproduction" name="type_of_reproduction" type="text" class="block w-full p-2 border rounded mb-4">#}
                         <select id="elementTypeOfReproduction" name="type_of_reproduction" class="block w-full p-2 border rounded mb-4">
                         <!-- Опции будут добавлены динамически через JavaScript -->
                         </select>
 
                         <!-- Поле для Единицы измерения -->
                         <label for="elementBasicUnit" class="block mb-2 text-sm font-medium text-gray-700">Единица измерения</label>
-{#                        <input id="elementBasicUnit" name="basic_unit" type="text" class="block w-full p-2 border rounded mb-4">#}
                         <select id="elementBasicUnit" name="basic_unit" type="text" class="block w-full p-2 border rounded mb-4">
                         <!-- Опции будут добавлены динамически через JavaScript -->
                         </select>
@@ -89,6 +88,7 @@
                         <div class="flex justify-center space-x-2 mt-4">
                             <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Отправить</button>
                             <button type="button" onclick="toggleEditModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded">Закрыть</button>
+                            <button type="button" onclick="confirmDeletion()" class="px-4 py-2 bg-red-400 text-white rounded">Удалить</button>
                         </div>
                     </form>
                 </div>
@@ -96,38 +96,83 @@
 
             <!-- Таблица -->
             <div class="container mx-auto px-4">
-                <table class="my-table mt-4" id="productTable">
+            
+                <!-- Поле ввода для поиска -->
+                <div class="my-4">
+                    <label for="searchInput" class="block text-sm font-medium text-gray-700">Поиск по наименованию:</label>
+                    <input 
+                    id="searchInput" 
+                    type="text" 
+                    class="mt-1 block w-full p-2 border rounded" 
+                    placeholder="Введите наименование для поиска..."
+                    onkeyup="filterTableByName()">
+                </div>
+            
+                <table class="my-table mt-4 w-full" id="productTable">
                     <thead>
                         <tr>
                             <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(0)">id</th>
                             <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(1)">Код</th>
                             <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(2)">Наименование</th>
-                            <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(3)">Вид воспроизводства</th>            
+                            <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(3)">Вид воспроизводства</th>
                             <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(4)">Ед.</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for product in products %}
+                        {% for product in page_obj %}
                             <tr class="cursor-pointer hover:text-red-400"
                                 data-id="{{ product.id }}"
                                 data-field-code="{{ product.field_code }}"
                                 data-name="{{ product.name }}"
-                                data-type-of-reproduction="{{ product.type_of_reproduction_display }}"
-                                data-basic-unit="{{ product.basic_unit_display }}"
+                                data-type-of-reproduction="{{ type_of_reproduction_choices|dict_get:product.type_of_reproduction }}"
+                                data-basic-unit="{{ basic_unit_choices|dict_get:product.basic_unit }}"
                                 data-url="{% url 'catalog:editCatalog' id=product.id %}"
                                 onclick="toggleEditModal(this)">
 
                                 <td class="font-light">{{ product.id }}</td>
                                 <td>{{ product.field_code }}</td>
                                 <td class="font-medium">{{ product.name }}</td>
-                                <td>{{ product.type_of_reproduction_display }}</td>
-                                <td>{{ product.basic_unit_display }}</td>
+                                <td>{{ type_of_reproduction_choices|dict_get:product.type_of_reproduction }}</td>
+                                <td>{{ basic_unit_choices|dict_get:product.basic_unit }}</td>
                             </tr>
                         {% endfor %}            
                     </tbody>
                 </table>
             </div>
-            
+
+            <!-- Пагинация -->
+            <div class="pagination flex justify-center mt-4">
+                <ul class="flex space-x-2">
+
+                    <!-- Ссылка "Назад" -->
+                    {% if page_obj.has_previous %}
+                        <li>
+                            <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">Назад</a>
+                        </li>
+                    {% endif %}
+
+                    <!-- Номера страниц -->
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if num == page_obj.number %}
+                            <li>
+                                <span class="px-4 py-2 bg-gray-300 text-gray-700 rounded">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li>
+                                <a href="?page={{ num }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Ссылка "Вперед" -->
+                    {% if page_obj.has_next %}
+                        <li>
+                            <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">Вперед</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+
             <!-- Выпадающий список по ПКМ -->
             <div id="actionModal" class="fixed inset-0 hidden">
                 <div class="bg-white rounded-lg shadow-lg p-4 max-w-fit" style="position: absolute;">
@@ -145,29 +190,7 @@
         
         </main>
         
-        <script src="{% static 'js/main.js' %}">
-            
-            // Заполняем выпадающий список "Вид воспроизводства"
-const reproductionSelect = document.getElementById("elementTypeOfReproduction");
-reproductionSelect.innerHTML = ''; // Очищаем текущие опции
-
-// Добавляем опцию по умолчанию
-const defaultOption = document.createElement('option');
-defaultOption.value = '';
-defaultOption.text = '-- Выберите вид воспроизводства --';
-reproductionSelect.appendChild(defaultOption);
-
-data.reproduction_choices.forEach(choice => {
-    const option = document.createElement('option');
-    option.value = choice.id;
-    option.text = choice.name;
-    if (choice.id === data.product.type_of_reproduction) {
-        option.selected = true;
-    }
-    reproductionSelect.appendChild(option);
-});
-            
-        </script>
+        <script src="{% static 'js/main.js' %}"></script>
 
     </body>
 </html>
