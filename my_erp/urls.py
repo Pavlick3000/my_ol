@@ -1,5 +1,5 @@
 from django.urls import path
-from my_erp.views import catalog, editCatalog, getSelectOptions, deleteRecord
+from my_erp.views import catalog, editCatalog, deleteRecord, getSelectOptions
 
 app_name = 'catalog'
 

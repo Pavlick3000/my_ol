@@ -49,36 +49,27 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',  # тулбар ddt
+    'django.middleware.cache.UpdateCacheMiddleware',    # кэш
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+
     'django.middleware.common.CommonMiddleware',
+
     'django.middleware.csrf.CsrfViewMiddleware',
+
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'django.middleware.cache.FetchFromCacheMiddleware', # кэш
+
 ]
 
+CACHE_MIDDLEWARE_ALIAS  = 'default' # cache alias
+CACHE_MIDDLEWARE_SECONDS = 600 # number of seconds each page should be cached.
+CACHE_MIDDLEWARE_KEY_PREFIX = ''  # name of site if multiple sites are used
+
 ROOT_URLCONF = 'my_ol.urls'
-
-
-
-# DEBUG_TOOLBAR_PANELS = [
-#     'debug_toolbar.panels.history.HistoryPanel',
-#     'debug_toolbar.panels.versions.VersionsPanel',
-#     'debug_toolbar.panels.timer.TimerPanel',
-#     'debug_toolbar.panels.settings.SettingsPanel',
-#     'debug_toolbar.panels.headers.HeadersPanel',
-#     'debug_toolbar.panels.request.RequestPanel',
-#     'debug_toolbar.panels.sql.SQLPanel',
-#     'debug_toolbar.panels.staticfiles.StaticFilesPanel',
-#     'debug_toolbar.panels.templates.TemplatesPanel',
-#     'debug_toolbar.panels.alerts.AlertsPanel',
-#     'debug_toolbar.panels.cache.CachePanel',
-#     'debug_toolbar.panels.signals.SignalsPanel',
-#     'debug_toolbar.panels.redirects.RedirectsPanel',
-#     'debug_toolbar.panels.profiling.ProfilingPanel',
-# ]
 
 TEMPLATES = [
     {
@@ -164,6 +155,7 @@ STATICFILES_DIRS = [BASE_DIR / "src"]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Надо сюда будет подставлять данные из файла .env, чтобы не менять настройки под лОкал и хост
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",

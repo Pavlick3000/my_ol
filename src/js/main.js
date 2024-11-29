@@ -144,6 +144,7 @@ async function loadSelectOptions(selectedReproduction, selectedBasicUnit) {
 
     try {
         const response = await fetch('getSelectOptions/');
+        // const response = await fetch('/');
         const data = await response.json();
 
         // Заполняем список "Вид воспроизводства"
@@ -240,6 +241,7 @@ function confirmDeletion() {
         });
     }
 }
+
 // Функция для получения CSRF-токена
 function getCookie(name) {
     let cookieValue = null;

@@ -138,7 +138,7 @@ class NomencBook(models.Model):
             return None
 
     def write(self, *args, **kwargs):
-
+        print("попали сюда! write1")
         # Формируем значение поля db_id
         if not self.db_id:
             self.db_id = uuid.uuid4().bytes

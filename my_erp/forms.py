@@ -16,6 +16,7 @@ class NomencBookForm(forms.ModelForm):
 
     class Meta:
         model = NomencBook
+        exclude = ['db_id']
         fields = ('name','type_of_reproduction', 'basic_unit')  # Вы можете указать конкретные поля, если нужно
 
     def __init__(self, *args, **kwargs):
@@ -50,6 +51,7 @@ class NomencBookForm(forms.ModelForm):
 
         # Проверяем, существует ли запись в NomencUnitBook
         if not NomencUnitBook.objects.filter(field_ownerid_rrref=self.instance.db_id).exists():
+            print("попали сюда! Проверяем, существует ли запись в NomencUnitBook")
             # Если записи нет, создаем новую запись в NomencUnitBook
             unit_record = NomencUnitBook.objects.create(
                 db_id=uuid.uuid4().bytes,  # Генерация нового UUID для db_id в формате bytes
