@@ -66,8 +66,10 @@ MIDDLEWARE = [
 ]
 
 CACHE_MIDDLEWARE_ALIAS  = 'default' # cache alias
-CACHE_MIDDLEWARE_SECONDS = 600 # number of seconds each page should be cached.
+CACHE_MIDDLEWARE_SECONDS = 1 # number of seconds each page should be cached.
 CACHE_MIDDLEWARE_KEY_PREFIX = ''  # name of site if multiple sites are used
+
+# ENABLE_CACHE = False
 
 ROOT_URLCONF = 'my_ol.urls'
 
@@ -159,8 +161,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        # "BACKEND": "django_redis.cache.RedisCache",
-        # "LOCATION": "redis://127.0.0.1:6379/0",
         "LOCATION": "redis://127.0.0.1:6379/1",
         "OPTIONS": {
             # "CLIENT_CLASS": "django_redis.client.DefaultClient",
@@ -174,4 +174,4 @@ INTERNAL_IPS = [
 
 # Users
 
-# AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'users.CustomUser'

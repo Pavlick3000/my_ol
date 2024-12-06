@@ -1,8 +1,9 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
+from users.models import CustomUser
 
-class SignUpForm(UserCreationForm):
+class RegistrationForm(forms.ModelForm):
+    phone_number = forms.CharField(max_length=15, required=True)
+
     class Meta:
-        model = User
-        fields = ('username', 'password1', 'password2')
+        model = CustomUser
+        fields = ['username', 'first_name', 'last_name', 'email', 'phone_number']

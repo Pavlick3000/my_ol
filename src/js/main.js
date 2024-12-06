@@ -1,9 +1,6 @@
 // Слушатель для каждого элемента таблицы, чтобы отслеживать клики
 document.querySelectorAll('tbody tr').forEach(item => {item.addEventListener('contextmenu', handleCellClick);});
 
-// Слушатель для каждого элемента таблицы, чтобы отслеживать клики
-// {#document.querySelectorAll('tbody tr').forEach(item => {item.addEventListener('click', toggleEditModal);});#}
-
 // Меню по нажатию ПКМ на запись в таблице
 function handleCellClick(event) {
     // Отменяем стандартное контекстное меню правой кнопки мыши
@@ -72,7 +69,7 @@ function toggleModal() {
 async function toggleEditModal(row = null) {
     const modal = document.getElementById('editmodal');
     // const selectedReproduction = document.querySelector('#reproduction-select').getAttribute('data-selected-value');
-
+    const modalContent = modal.querySelector('.modal-content'); // Основной контент модального окна
     if (row) {
         // Получаем данные из атрибутов data-*
         const id = row.getAttribute('data-id');
@@ -95,10 +92,27 @@ async function toggleEditModal(row = null) {
 
         // Загружаем опции для выпадающих списков
         await loadSelectOptions(typeOfReproduction, basicUnit);
+
     }
 
     // Открываем/закрываем модальное окно
     modal.classList.toggle('hidden');
+
+    // Закрытие при клике вне модального окна
+    document.addEventListener('click', function outsideClick(event) {
+        if (!modalContent.contains(event.target) && !modal.classList.contains('hidden')) {
+            modal.classList.add('hidden');
+            document.removeEventListener('click', outsideClick); // Убираем обработчик
+        }
+    });
+
+    // Закрытие при нажатии Esc
+    document.addEventListener('keydown', function escKey(event) {
+        if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+            modal.classList.add('hidden');
+            document.removeEventListener('keydown', escKey); // Убираем обработчик
+        }
+    });
 }
 
 // JSON

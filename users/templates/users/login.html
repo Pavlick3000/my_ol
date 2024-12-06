@@ -1,6 +1,44 @@
-<h2>Вход</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Войти</button>
-</form>
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{ title }}</title>
+        <link href="{% static 'css/output.css' %}" rel="stylesheet">
+        <link rel="icon" href="{% static 'icons/favicon.ico' %}" type="image/x-icon">
+    </head>
+
+<body>
+
+    <main>
+
+        <div id="login-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white p-6 rounded-lg w-full max-w-md shadow-lg shadow-gray-700 relative">
+                <!-- Крестик для закрытия модального окна -->
+                <button id="close-login-modal" class="absolute top-2 right-2 p-2">
+                    <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
+                </button>
+                <h2 class="text-xl mb-4 text-center">Авторизация</h2>
+                <form method="post" action="{% url 'users:login' %}">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="phone_number" class="block mb-2 text-sm font-medium text-gray-700">Номер телефона</label>
+                        <input
+                                type="text"
+                                id="phone_number"
+                                name="phone_number"
+                                class="block w-2/4 p-2 border rounded mb-4 focus:outline-none focus:ring-0 focus:border-gray-200"
+                                value="+7 "
+                                maxlength="16">
+                    </div>
+                </form>
+                <button class="px-4 py-2 bg-emerald-500 text-gray-700 rounded block mx-auto">Получить код</button> <!-- TODO кнопка должна быть неактивной пока не введен номер телефона -->
+            </div>
+        </div>
+        
+    </main>
+
+    <script src="{% static 'js/user.js' %}"></script>
+
+</body>

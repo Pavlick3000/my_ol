@@ -1,0 +1,49 @@
+{% load static %}
+{% include 'users/login.html' %}
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{ title }}</title>
+        <link href="{% static 'css/output.css' %}" rel="stylesheet">
+        <link rel="icon" href="{% static 'icons/favicon.ico' %}" type="image/x-icon">
+    </head>
+    
+    <body class="bg-white flex flex-col min-h-screen">
+        
+        <!-- Шапка -->
+        <div class="bg-blue-200 h-20 w-full">
+            <div class="flex items-center justify-between h-full px-8">
+                <!-- Логотип -->
+                <h1 class="text-2xl font-bold">
+                    <a href="{% url 'index' %}" class="text-gray-800 hover:text-blue-600 transition-colors duration-300">
+                        ERP-Hermes logo
+                    </a>
+                </h1>
+
+                <!-- Кнопка Вход -->
+                <h1 class="text-2xl font-light">
+                    <button id="open-login-modal" type="button" class="flex items-end gap-2 text-gray-800 hover:text-blue-600 transition-colors duration-300">
+                        <span class="icon-container flex items-end">
+                            <img src="{% static 'icons/user.ico' %}" alt="Иконка входа" class="w-5 h-5 align-bottom">
+                        </span>
+                        <span class="leading-none">Вход</span>
+                    </button>
+                </h1>
+            </div>
+        </div>
+
+    
+        {% block content %} {% endblock %}
+        
+        <!-- Подвал -->
+        <footer class="bg-gray-500 text-white py-1.5 text-center">
+            <p>© 2024 ERP-Hermes.</p>
+            Иконки от <a target="_blank" href="https://icons8.com">Icons8</a>
+        </footer>
+        
+        <script src="{% static 'js/main.js' %}"></script>
+
+    </body>
+</html>
