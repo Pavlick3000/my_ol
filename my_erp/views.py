@@ -68,19 +68,9 @@ def catalog(request):
 def editCatalog(request, id):
     product = get_object_or_404(NomencBook, id=id)
     form = NomencBookForm(request.POST or None, instance=product)
-    # type_of_reproduction_hex = request.POST.get('type_of_reproduction')
-    # basic_unit_hex = request.POST.get('basic_unit')
 
     if form.is_valid():
         try:
-            # Декодируем hex-строку в бинарный формат
-            # reproduction_binary = binascii.unhexlify(type_of_reproduction_hex)
-            # basic_unit_binary = binascii.unhexlify(basic_unit_hex)
-
-            # Обновляем поле reproduction и db_id в форме
-            # form.instance.reproduction = reproduction_binary
-            # form.instance.db_id = basic_unit_binary
-
             # Сохраняем объект через форму
             form.save()
             return JsonResponse({"status": "success", "message": "Запись успешно обновлена."})

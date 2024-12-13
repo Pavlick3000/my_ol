@@ -1,10 +1,38 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>{{ title }}</title>
+    <link href="{% static 'css/output.css' %}" rel="stylesheet">
+    <link rel="icon" href="{% static 'icons/favicon.ico' %}" type="image/x-icon">
 </head>
+
 <body>
 
+<main>
+    
+    <div id="login-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-start justify-center">
+        <div id="login-modal-content" class="bg-white p-6 rounded-lg w-[400px] max-h-screen shadow-lg shadow-gray-700 relative transition-[height]" style="margin-top: 100px;">
+        
+            <!-- Крестик для закрытия модального окна -->
+            <button id="close-login-modal" class="absolute top-2 right-2 p-2">
+                <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
+            </button>
+            <!-- Кнопки Авторизация и Регистрация -->
+            <div id="auth-header" class="flex items-center justify-center mb-10">
+                <h1 id="auth-link" class="text-sm underline underline-offset-4 decoration-gray-300 hover:text-blue-600 transition-colors duration-300 cursor-pointer">Авторизация</h1>
+                <span class="mx-4 border-l border-gray-300 h-6"></span>
+                <h1 id="register-link" class="text-sm hover:text-blue-600 transition-colors duration-300 cursor-pointer">Регистрация</h1>
+            </div>
+
+            {% block content %} {% endblock %}
+
+        </div>
+    </div>
+</main>
+
+<script src="{% static 'js/user.js' %}"></script>
+
 </body>
-</html>

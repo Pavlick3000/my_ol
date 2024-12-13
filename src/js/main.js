@@ -233,7 +233,7 @@ function confirmDeletion() {
     const elementId = document.getElementById("elementId").value;
 
     if (confirm("Вы уверены, что хотите удалить эту запись?")) {
-        fetch(`/catalog/deleteRecord/${elementId}/`, {
+        fetch(`/catalog/deleteRecord/${elementId}/`, { //TODO тут надо убрать хардкод!
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
