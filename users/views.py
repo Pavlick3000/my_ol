@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.utils.crypto import get_random_string
@@ -11,8 +12,25 @@ from users.models import CustomUser
 def login(request):
     return render(request, 'users/login.html')
 
+User = get_user_model()
+
 def signup(request):
     if request.method == 'POST':
+        # Получаем данные из запроса
+        email = request.POST.get('email')
+        phone_number = request.POST.get('contact_input_number')
+
+        # Проверка email на существование
+        if User.objects.filter(email=email).exists():
+            return JsonResponse({'status': 'error', 'message': 'Пользователь с таким email уже зарегистрирован.'},
+                                status=400)
+
+        # Проверка номера телефона на существование
+        if User.objects.filter(phone_number=phone_number).exists():
+            return JsonResponse(
+                {'status': 'error', 'message': 'Пользователь с таким номером телефона уже зарегистрирован.'},
+                status=400)
+
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             # Генерация 6-значного кода
@@ -36,6 +54,7 @@ def signup(request):
             # Ответ в формате JSON, чтобы показать модальное окно с кодом
             return JsonResponse({'status': 'success', 'message': 'Код подтверждения отправлен на вашу почту.'})
         else:
+            # print("Form is invalid. Errors: ", form.errors)  # Выводим ошибки
             # Если форма невалидна, возвращаем ошибку
             return JsonResponse({'status': 'error', 'message': 'Пожалуйста, проверьте правильность введенных данных.'},
                                 status=400)

@@ -15,10 +15,11 @@
                         type="text"
                         id="contact_input_number_login"
                         name="contact_input_number"
-                        class="contact_input_number block mb-2 text-center mx-auto w-2/4 p-2 border rounded focus:outline-none focus:ring-0 focus:border-gray-200"
-                        maxlength="16">
+                        class="contact_input_number block mb-2 text-center mx-auto w-[220px] p-2 border rounded focus:outline-none focus:ring-0 focus:border-gray-200"
+                        maxlength="16"
+                        autocomplete="new-password">
             </div>
-            <button class="px-4 py-2 mb-6 bg-emerald-500 text-gray-700 rounded block mx-auto w-2/4 hover:bg-emerald-400 transition-colors duration-300">Получить код</button> <!-- TODO кнопка должна быть неактивной пока не введен номер телефона -->
+            <button class="px-4 py-2 mb-6 bg-emerald-500 text-gray-700 rounded block mx-auto w-[220px] hover:bg-emerald-400 transition-colors duration-300">Получить код по СМС</button> <!-- TODO кнопка должна быть неактивной пока не введен номер телефона -->
             <label class="relative block text-center mb-2 text-sm font-extralight text-gray-700 before:content-[''] before:absolute before:left-0 before:top-1/2 before:w-2/5 before:border-t before:border-gray-300 before:mr-2 after:content-[''] after:absolute after:right-0 after:top-1/2 after:w-2/5 after:border-t after:border-gray-300 after:ml-2">
                 или
             </label>
@@ -30,6 +31,7 @@
     <div id="register-form" class="hidden">
         <form id="email-code-form" method="post" action="{% url 'users:signup' %}" data-signup-url="{% url 'users:signup' %}">
             {% csrf_token %}
+{#            <div id="error-message" class="hidden text-red-500"></div>#}
             <div class="mb-1">
                 <label>
                     <input type="text" name="first_name" class="block text-left mx-auto w-[220px] p-2 border rounded mb-1 focus:outline-none focus:ring-0 focus:border-gray-200" placeholder="Имя" required>
@@ -42,7 +44,7 @@
             </div>
             <div class="mb-4">
                 <label>
-                    <input type="email" name="email" class="block text-left mx-auto w-[220px] p-2 border rounded mb-4 focus:outline-none focus:ring-0 focus:border-gray-200" placeholder="Почта" required>
+                    <input type="email" name="email" id="email" class="block text-left mx-auto w-[220px] p-2 border rounded mb-4 focus:outline-none focus:ring-0 focus:border-gray-200" placeholder="Почта" required>
                 </label>
             </div>
             <div class="mb-2">
@@ -50,11 +52,13 @@
                 <input
                         type="text"
                         id="contact_input_number_register"
-                        name="phone_number"
+                        name="contact_input_number"
+                        data-real-name="phone_number"
                         class="contact_input_number block text-center mx-auto w-[220px] p-2 border rounded mb-4 focus:outline-none focus:ring-0 focus:border-gray-200"
-                        maxlength="16">
+                        maxlength="16"
+                        autocomplete="new-password">
             </div>
-            <button type="submit" id="send-code-sms" class="px-4 py-2 mb-6 bg-emerald-500 text-gray-700 rounded block mx-auto w-[220px] hover:bg-emerald-400 transition-colors duration-300">Зарегистрироваться</button> <!-- TODO кнопка должна быть неактивной пока не введен номер телефона -->
+             <button type="submit" id="send-code-sms" class="px-4 py-2 mb-6 bg-gray-400 text-gray-700 rounded block mx-auto w-[220px] opacity-50 transition-colors duration-300" disabled>Получить код по СМС</button>
             <label class="relative block text-center mb-1 text-sm font-extralight text-gray-700 before:content-[''] before:absolute before:left-0 before:top-1/2 before:w-2/5 before:border-t before:border-gray-300 before:mr-2 after:content-[''] after:absolute after:right-0 after:top-1/2 after:w-2/5 after:border-t after:border-gray-300 after:ml-2">
                 или
             </label>
