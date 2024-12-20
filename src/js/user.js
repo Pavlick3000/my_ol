@@ -209,7 +209,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 const contactInfo = sendType === 'sms' ? rawPhoneValue : document.getElementById('email').value; // Получаем номер телефона или email
                 const contactMethod = sendType === 'sms' ? 'номер' : 'почту'; // Определяем метод отправки
 
-                // modalContactInfo.textContent = `Код отправлен ${contactMethod} ${contactInfo}`;
                 modalContactInfo.textContent = `Код отправлен на ${contactMethod}`;
                 modalContactInfoMethods.textContent = `${contactInfo}`;
 

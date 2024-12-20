@@ -71,7 +71,6 @@
         <form id="code-verification-form" method="post" action="{% url 'users:verify_code' %}">
             {% csrf_token %}
             <h2 class="text-xl font-medium mb-2 text-center">Введите код</h2>
-{#            <p class="text-sm text-gray-600 mb-4 text-center">Мы отправили вам 6-значный код</p>#}
             <p id="modalContactInfo" class="text-center"></p>
             <p id="modalContactInfoMethods" class="mb-4 text-center"></p>
             <input
