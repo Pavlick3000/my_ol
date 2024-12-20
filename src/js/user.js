@@ -88,13 +88,16 @@ document.addEventListener('DOMContentLoaded', () => {
 //JSON и проверка полей
 document.addEventListener('DOMContentLoaded', function () {
     const registerForm = document.getElementById('email-code-form');
-    const submitButton = document.getElementById('send-code-sms');
+    const smsButton = document.getElementById('send-code-sms');
+    const emailButton = document.getElementById('send-code-email');
     const fields = registerForm.querySelectorAll('[name="first_name"], [name="last_name"], [name="email"], [name="contact_input_number"]');
     const phoneInput = document.querySelector('[data-real-name="phone_number"]');
     const authForm = document.getElementById('auth-form');
     const modalCode = document.getElementById('modal-code');
     const authButtons = document.getElementById('auth-header');
     const modalContent = document.getElementById('login-modal-content');
+    const modalContactInfo = document.getElementById('modalContactInfo');
+    const modalContactInfoMethods = document.getElementById('modalContactInfoMethods');
 
     // Установка начального значения и блокировка удаления +7
     phoneInput.value = '+7 ';
@@ -143,13 +146,20 @@ document.addEventListener('DOMContentLoaded', function () {
             isValid = false;
         }
 
-        // Активируем или деактивируем кнопку
-        submitButton.disabled = !isValid;
-        submitButton.classList.toggle('opacity-50', !isValid);
-        submitButton.classList.toggle('bg-gray-400', !isValid);
-        submitButton.classList.toggle('bg-emerald-500', isValid);
-        submitButton.classList.toggle('text-gray-700', isValid);
-        submitButton.classList.toggle('hover:bg-emerald-400', isValid);
+        // Активируем или деактивируем кнопку отправки кода по email
+        emailButton.disabled = !isValid;
+        emailButton.classList.toggle('opacity-50', !isValid);
+        emailButton.classList.toggle('text-gray-700', isValid);
+        emailButton.classList.toggle('hover:text-emerald-500', isValid);
+
+
+        // Активируем или деактивируем кнопку отправки кода по SMS
+        smsButton.disabled = !isValid;
+        smsButton.classList.toggle('opacity-50', !isValid);
+        smsButton.classList.toggle('bg-gray-400', !isValid);
+        smsButton.classList.toggle('bg-emerald-500', isValid);
+        smsButton.classList.toggle('text-gray-700', isValid);
+        smsButton.classList.toggle('hover:bg-emerald-400', isValid);
     };
 
     // Обработчик для проверки формы на каждом изменении поля
@@ -169,57 +179,59 @@ document.addEventListener('DOMContentLoaded', function () {
         return rawValue.length === 11; // Длина должна быть ровно 11 цифр
     }
 
-    // Проверка формы перед отправкой
-    registerForm.addEventListener('submit', function (e) {
-        e.preventDefault(); // Предотвращаем стандартное отправление формы
-        const emailField = document.getElementById('email');
-        // const email = emailField.value.trim();
-        const rawPhoneValue = phoneInput.value.replace(/\s+/g, ''); // Удаляем пробелы
-        phoneInput.value = rawPhoneValue;
-
-        // Проверка перед отправкой (дополнительно на случай манипуляций с DOM)
-        let isValid = true;
-
-        fields.forEach(field => {
-            if (!field.value.trim()) {
-                isValid = false;
-            }
-        });
-
-        // Если все поля корректно заполнены, отправляем данные через AJAX
+    // Универсальная функция отправки данных
+    function sendCode(sendType) {
         const formData = new FormData(registerForm);
-        formData.set('phone_number', rawPhoneValue); // Заменяем значение в formData
+        formData.append('send_type', sendType); // Добавляем тип отправки (SMS или Email)
+
+        const rawPhoneValue = phoneInput.value.replace(/\s+/g, '');
+        formData.set('phone_number', rawPhoneValue); // Устанавливаем отформатированный номер
+
         const signupUrl = registerForm.getAttribute('data-signup-url');
 
         fetch(signupUrl, {
             method: 'POST',
             body: formData,
             headers: {
-                'X-Requested-With': 'XMLHttpRequest', // Указываем, что это AJAX-запрос
+                'X-Requested-With': 'XMLHttpRequest',
             },
         })
         .then(response => response.json())
         .then(data => {
-            console.log(data);
             if (data.status === 'success') {
-                // Если прошли валидацию
-                authForm.classList.add('hidden'); // Скрываем форму авторизации
-                registerForm.classList.add('hidden'); // Скрываем форму регистрации
-                authButtons.classList.add('hidden'); // Скрываем кнопки "авторизация" и "регистрация"
-                modalCode.classList.remove('hidden'); // Показываем форму ввода пароля
-                modalContent.style.height = '240px'; // Высота для формы ввода кода после SMS
+                authForm.classList.add('hidden');
+                registerForm.classList.add('hidden');
+                authButtons.classList.add('hidden');
+                modalCode.classList.remove('hidden');
+                modalContent.style.height = '250px';
+
+                // Обновляем содержимое модального окна
+                const contactInfo = sendType === 'sms' ? rawPhoneValue : document.getElementById('email').value; // Получаем номер телефона или email
+                const contactMethod = sendType === 'sms' ? 'номер' : 'почту'; // Определяем метод отправки
+
+                // modalContactInfo.textContent = `Код отправлен ${contactMethod} ${contactInfo}`;
+                modalContactInfo.textContent = `Код отправлен на ${contactMethod}`;
+                modalContactInfoMethods.textContent = `${contactInfo}`;
+
             } else {
                 alert(data.message || 'Произошла ошибка');
             }
         })
         .catch(error => {
             console.error('Ошибка:', error);
-            alert('Произошла ошибка при регистрации.');
+            alert('Произошла ошибка при отправке кода.');
         });
+    }
+
+    // Обработчики кнопок
+    smsButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        sendCode('sms');
     });
+
+    emailButton.addEventListener('click', function (e) {
+        e.preventDefault();
+        sendCode('email');
+    });
+
 });
-
-
-
-
-

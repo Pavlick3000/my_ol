@@ -58,11 +58,11 @@
                         maxlength="16"
                         autocomplete="new-password">
             </div>
-             <button type="submit" id="send-code-sms" class="px-4 py-2 mb-6 bg-gray-400 text-gray-700 rounded block mx-auto w-[220px] opacity-50 transition-colors duration-300" disabled>Получить код по СМС</button>
+            <button type="submit" id="send-code-sms" class="px-4 py-2 mb-6 bg-gray-400 text-gray-700 rounded block mx-auto w-[220px] opacity-50 transition-colors duration-300" disabled>Получить код по СМС</button>
             <label class="relative block text-center mb-1 text-sm font-extralight text-gray-700 before:content-[''] before:absolute before:left-0 before:top-1/2 before:w-2/5 before:border-t before:border-gray-300 before:mr-2 after:content-[''] after:absolute after:right-0 after:top-1/2 after:w-2/5 after:border-t after:border-gray-300 after:ml-2">
                 или
             </label>
-            <button type="submit" id="send-code-email" class="block mx-auto px-4 py-2 font-extralight text-gray-700 hover:text-blue-600 transition-colors duration-300">Получить код на почту</button>
+            <button type="submit" id="send-code-email" class="block mx-auto px-4 py-2 font-extralight text-gray-700 opacity-50 transition-colors duration-300" disabled>Получить код на почту</button>
         </form>
     </div>
 
@@ -71,7 +71,9 @@
         <form id="code-verification-form" method="post" action="{% url 'users:verify_code' %}">
             {% csrf_token %}
             <h2 class="text-xl font-medium mb-2 text-center">Введите код</h2>
-            <p class="text-sm text-gray-600 mb-4 text-center">Мы отправили вам 6-значный код</p>
+{#            <p class="text-sm text-gray-600 mb-4 text-center">Мы отправили вам 6-значный код</p>#}
+            <p id="modalContactInfo" class="text-center"></p>
+            <p id="modalContactInfoMethods" class="mb-4 text-center"></p>
             <input
                     type="text"
                     name="verification_code"

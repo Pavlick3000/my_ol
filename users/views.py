@@ -4,10 +4,10 @@ from django.shortcuts import render, redirect
 from django.utils.crypto import get_random_string
 from django.contrib import messages
 from django.http import JsonResponse
-
 from my_ol import settings
 from users.forms import CustomUserCreationForm
 from users.models import CustomUser
+from .utils import send_sms
 
 def login(request):
     return render(request, 'users/login.html')
@@ -17,19 +17,15 @@ User = get_user_model()
 def signup(request):
     if request.method == 'POST':
         # Получаем данные из запроса
+        send_type = request.POST.get('send_type')  # Получаем тип отправки
         email = request.POST.get('email')
-        phone_number = request.POST.get('contact_input_number')
+        phone_number = request.POST.get('phone_number')
 
-        # Проверка email на существование
+        # Проверка на совпадение email и phone_number с записями в БД
         if User.objects.filter(email=email).exists():
-            return JsonResponse({'status': 'error', 'message': 'Пользователь с таким email уже зарегистрирован.'},
-                                status=400)
-
-        # Проверка номера телефона на существование
+            return JsonResponse({'status': 'error', 'message': 'Пользователь с таким email уже зарегистрирован.'},status=400)
         if User.objects.filter(phone_number=phone_number).exists():
-            return JsonResponse(
-                {'status': 'error', 'message': 'Пользователь с таким номером телефона уже зарегистрирован.'},
-                status=400)
+            return JsonResponse({'status': 'error', 'message': 'Пользователь с таким номером телефона уже зарегистрирован.'},status=400)
 
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
@@ -41,20 +37,24 @@ def signup(request):
             request.session['user_data'] = form.cleaned_data
             request.session.set_expiry(600)  # Код действует 10 минут
 
+            if send_type == 'sms':
+                # Отправка SMS
+                message = f"Ваш код подтверждения: {verification_code}"
+                send_sms(phone_number, message)
+            elif send_type == 'email':
             # Отправка кода на почту
-            email = form.cleaned_data['email']
-            send_mail(
-                subject="Ваш код подтверждения",
-                message=f"Ваш код: {verification_code}",
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[email],
-                fail_silently=False,
-            )
-
+                print("почта")
+                email = form.cleaned_data['email']
+                send_mail(
+                    subject="Ваш код подтверждения",
+                    message=f"Ваш код: {verification_code}",
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
             # Ответ в формате JSON, чтобы показать модальное окно с кодом
             return JsonResponse({'status': 'success', 'message': 'Код подтверждения отправлен на вашу почту.'})
         else:
-            # print("Form is invalid. Errors: ", form.errors)  # Выводим ошибки
             # Если форма невалидна, возвращаем ошибку
             return JsonResponse({'status': 'error', 'message': 'Пожалуйста, проверьте правильность введенных данных.'},
                                 status=400)
