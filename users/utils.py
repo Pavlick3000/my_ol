@@ -3,7 +3,7 @@ from smsaero import SmsAero, SmsAeroException
 
 
 SMSAERO_EMAIL = 'p.v.zagornyak@gmail.com'
-SMSAERO_API_KEY = 'JAK37p5LPHZyqp5eCQOLZve3E4PlAHTj'
+SMSAERO_API_KEY = ''
 
 
 def send_sms(phone_number: int, message: str) -> dict:
