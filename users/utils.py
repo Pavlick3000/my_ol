@@ -1,9 +1,13 @@
 from pprint import pprint
 from smsaero import SmsAero, SmsAeroException
+from dotenv import dotenv_values
+import os
+from my_ol.settings import BASE_DIR
 
+config = dotenv_values(os.path.join(BASE_DIR, '.env'))
 
 SMSAERO_EMAIL = 'p.v.zagornyak@gmail.com'
-SMSAERO_API_KEY = 'JAK37p5LPHZyqp5eCQOLZve3E4PlAHTj'
+SMSAERO_API_KEY = config['SMSAERO_API_KEY']
 
 
 def send_sms(phone_number: int, message: str) -> dict:
