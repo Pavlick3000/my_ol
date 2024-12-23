@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalButton = document.getElementById('close-login-modal');
     const modal = document.getElementById('login-modal');
     const phoneInputLogin = document.getElementById('contact_input_number_login');
-    // const phoneInputRegister = document.getElementById('contact_input_number_register');
     const authForm = document.getElementById('auth-form');
     const registerForm = document.getElementById('register-form');
     const modalCode = document.getElementById('modal-code'); // Форма ввода кода
@@ -14,17 +13,27 @@ document.addEventListener('DOMContentLoaded', () => {
     openModalButton.addEventListener('click', () => {
         modal.classList.remove('hidden');
 
-        // Всегда при открытии окна открывается форма авторизации
-        authButtons.classList.remove('hidden');
-        authForm.classList.remove('hidden');
-        document.getElementById('auth-link').classList.add('underline', "underline-offset-4", "decoration-gray-300");
-        document.getElementById('register-link').classList.remove('underline', "underline-offset-4", "decoration-gray-300");
-        registerForm.classList.add('hidden');
-        modalCode.classList.add('hidden');
-        modalContent.style.height = '380px'; // Высота для формы авторизации
-        phoneInputLogin.value = '+7 ';
-        phoneInputLogin.focus();
+        const registrationInProgress = localStorage.getItem('registrationInProgress');
 
+        if (registrationInProgress === 'true') {
+            // Открыть модальное окно с вводом кода если процесс регистрации прервался закрытием окна ввода кода
+            authButtons.classList.add('hidden');
+            authForm.classList.add('hidden');
+            registerForm.classList.add('hidden');
+            modalCode.classList.remove('hidden');
+            modalContent.style.height = '250px';
+        } else {
+            // По умолчанию открыть форму авторизации
+            authButtons.classList.remove('hidden');
+            authForm.classList.remove('hidden');
+            document.getElementById('auth-link').classList.add('underline', "underline-offset-4", "decoration-gray-300");
+            document.getElementById('register-link').classList.remove('underline', "underline-offset-4", "decoration-gray-300");
+            registerForm.classList.add('hidden');
+            modalCode.classList.add('hidden');
+            modalContent.style.height = '380px';
+            phoneInputLogin.value = '+7 ';
+            phoneInputLogin.focus();
+        }
     });
 
     // Обработчик закрытия модального окна для крестика
@@ -204,6 +213,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 authButtons.classList.add('hidden');
                 modalCode.classList.remove('hidden');
                 modalContent.style.height = '250px';
+                localStorage.setItem('registrationInProgress', 'true'); // фиксируем, что пользователю успешно отправлен код, чтобы при повторном нажатии "Вход" сразу попадать в окно ввода кода
 
                 // Обновляем содержимое модального окна
                 const contactInfo = sendType === 'sms' ? rawPhoneValue : document.getElementById('email').value; // Получаем номер телефона или email
@@ -221,6 +231,58 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('Произошла ошибка при отправке кода.');
         });
     }
+
+    // Находим модальное окно и форму внутри него - для обработки события ввода неправильного кода
+    // const modalCodeError = document.getElementById('modal-code');
+    const form = modalCode.querySelector('form'); // Находим первую форму внутри модального окна
+
+    // Добавляем обработчик на форму ввода кода
+    form.addEventListener('submit', function (e) {
+        e.preventDefault(); // Предотвращаем стандартное поведение формы
+
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // alert(data.message);
+                    localStorage.removeItem('registrationInProgress'); // Процесс регистрации завершен, теперь при повторном нажатии кнопки "Вход", будет открываться окно авторизации
+                    location.reload(); // остаемся на той же странице от куда начали регистрацию
+                } else {
+
+                    let errorMessageElement = document.getElementById('error-message');
+
+                    if (errorMessageElement) {
+                        // Показываем сообщение об ошибке
+                        errorMessageElement.textContent = data.error;
+                        errorMessageElement.classList.remove('hidden'); // Убираем скрытие
+
+                        // Добавляем класс для увеличения формы
+                        const form = document.getElementById('code-verification-form');
+                        form.classList.add('error-expanded');
+                        modalContent.style.height = '280px'
+                        // Удаляем сообщение об ошибке и сбрасываем размер формы через 2.5 секунды
+                        setTimeout(() => {
+                            errorMessageElement.textContent = '';
+                            errorMessageElement.classList.add('hidden'); // Снова скрываем сообщение
+                            form.classList.remove('error-expanded'); // Убираем временное увеличение формы
+                            modalContent.style.height = '250px';
+                        }, 2500);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка при проверке кода.');
+            });
+    });
 
     // Обработчики кнопок
     smsButton.addEventListener('click', function (e) {

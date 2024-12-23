@@ -1,6 +1,9 @@
+from lib2to3.fixes.fix_input import context
+
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.utils.crypto import get_random_string
 from django.contrib import messages
 from django.http import JsonResponse
@@ -38,12 +41,11 @@ def signup(request):
             request.session.set_expiry(600)  # Код действует 10 минут
 
             if send_type == 'sms':
-                # Отправка SMS
+                # Отправка кода по SMS
                 message = f"Ваш код подтверждения: {verification_code}"
                 send_sms(phone_number, message)
             elif send_type == 'email':
-            # Отправка кода на почту
-                print("почта")
+                # Отправка кода на почту
                 email = form.cleaned_data['email']
                 send_mail(
                     subject="Ваш код подтверждения",
@@ -70,6 +72,11 @@ def verify_code(request):
         session_code = request.session.get('verification_code')
 
         if not session_code:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Срок действия кода истек. Пожалуйста, зарегистрируйтесь снова.'
+                }, status=400)
             messages.error(request, 'Срок действия кода истек. Пожалуйста, зарегистрируйтесь снова.')
             return redirect('users:signup')
 
@@ -83,10 +90,15 @@ def verify_code(request):
                     last_name=user_data['last_name'],
                     phone_number=user_data['phone_number'],
                 )
-                request.session.flush()  # Очистка сессии
-                messages.success(request, "Вы успешно зарегистрированы!")
-                return redirect('catalog:index')
-        else:
-            messages.error(request, 'Неверный код. Попробуйте снова.')
+                request.session.flush()
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Код подтверждён. Регистрация завершена.'
+                }, status=200)
+
+        return JsonResponse({
+            'success': False,
+            'error': 'Неверный код. Попробуйте снова.'
+        }, status=400)
 
     return render(request, 'users/login.html')

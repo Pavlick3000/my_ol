@@ -31,7 +31,6 @@
     <div id="register-form" class="hidden">
         <form id="email-code-form" method="post" action="{% url 'users:signup' %}" data-signup-url="{% url 'users:signup' %}">
             {% csrf_token %}
-{#            <div id="error-message" class="hidden text-red-500"></div>#}
             <div class="mb-1">
                 <label>
                     <input type="text" name="first_name" class="block text-left mx-auto w-[220px] p-2 border rounded mb-1 focus:outline-none focus:ring-0 focus:border-gray-200" placeholder="Имя" required>
@@ -67,9 +66,10 @@
     </div>
 
     <!-- Форма ввода кода -->
-    <div id="modal-code" class="hidden">
+    <div id="modal-code">
         <form id="code-verification-form" method="post" action="{% url 'users:verify_code' %}">
             {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
             <h2 class="text-xl font-medium mb-2 text-center">Введите код</h2>
             <p id="modalContactInfo" class="text-center"></p>
             <p id="modalContactInfoMethods" class="mb-4 text-center"></p>
@@ -88,6 +88,7 @@
                     class="px-4 py-2 mb-4 bg-emerald-500 text-gray-700 rounded block mx-auto w-[220px] hover:bg-emerald-400 transition-colors duration-300">
                 Подтвердить
             </button>
+            <p id="error-message" class="text-red-500 text-center mb-4 hidden"></p>
         </form>
     </div>
     
