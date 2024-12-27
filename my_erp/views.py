@@ -23,7 +23,8 @@ def index(request):
 
 # Представление для страницы Каталог
 def catalog(request):
-
+    session_key = request.session.session_key
+    print("Текущий номер сессии:", session_key)
     nbook = NomencBook.objects.only('id','type_of_reproduction', 'basic_unit', 'field_code', 'name').order_by('-id')
 
     # Подгружаем данные для выбора

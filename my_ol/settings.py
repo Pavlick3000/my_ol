@@ -63,7 +63,7 @@ MIDDLEWARE = [
 ]
 
 CACHE_MIDDLEWARE_ALIAS  = 'default' # cache alias
-CACHE_MIDDLEWARE_SECONDS = 1 # number of seconds each page should be cached.
+CACHE_MIDDLEWARE_SECONDS = 10 # number of seconds each page should be cached.
 CACHE_MIDDLEWARE_KEY_PREFIX = ''  # name of site if multiple sites are used
 
 # ENABLE_CACHE = False
@@ -179,3 +179,8 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config['EMAIL_HOST_USER']
 EMAIL_HOST_PASSWORD = config['EMAIL_HOST_PASSWORD']
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Сессия будет закрыта при закрытии браузера
+SESSION_COOKIE_AGE = 3600  # Время жизни сессии в секундах (1 час)

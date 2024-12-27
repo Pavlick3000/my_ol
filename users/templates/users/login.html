@@ -23,22 +23,22 @@
             <label class="relative block text-center mb-2 text-sm font-extralight text-gray-700 before:content-[''] before:absolute before:left-0 before:top-1/2 before:w-2/5 before:border-t before:border-gray-300 before:mr-2 after:content-[''] after:absolute after:right-0 after:top-1/2 after:w-2/5 after:border-t after:border-gray-300 after:ml-2">
                 или
             </label>
-            <button class="block mx-auto px-4 py-2 font-extralight text-gray-700 hover:text-blue-600 transition-colors duration-300">Получить код на почту</button>
+            <button class="block mx-auto px-4 py-2 font-extralight text-gray-700 hover:text-emerald-500 transition-colors duration-300">Получить код на почту</button>
         </form>
     </div>
-    
+
     <!-- Форма регистрации -->
     <div id="register-form" class="hidden">
         <form id="email-code-form" method="post" action="{% url 'users:signup' %}" data-signup-url="{% url 'users:signup' %}">
             {% csrf_token %}
             <div class="mb-1">
                 <label>
-                    <input type="text" name="first_name" class="block text-left mx-auto w-[220px] p-2 border rounded mb-1 focus:outline-none focus:ring-0 focus:border-gray-200" placeholder="Имя" required>
+                    <input type="text" id="first_name" name="first_name" class="block text-left mx-auto w-[220px] p-2 border rounded mb-1 focus:outline-none focus:ring-0 focus:border-gray-200" placeholder="Имя" required>
                 </label>
             </div>
             <div class="mb-1">
                 <label>
-                    <input type="text" name="last_name" class="block text-left mx-auto w-[220px] p-2 border rounded mb-1 focus:outline-none focus:ring-0 focus:border-gray-200" placeholder="Фамилия" required>
+                    <input type="text" id="last_name" name="last_name" class="block text-left mx-auto w-[220px] p-2 border rounded mb-1 focus:outline-none focus:ring-0 focus:border-gray-200" placeholder="Фамилия" required>
                 </label>
             </div>
             <div class="mb-4">
@@ -67,7 +67,7 @@
 
     <!-- Форма ввода кода -->
     <div id="modal-code">
-        <form id="code-verification-form" method="post" action="{% url 'users:verify_code' %}">
+        <form id="code-verification-form" method="post" action="{% url 'users:verify_code' %}" class="flex flex-col items-center">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.path }}">
             <h2 class="text-xl font-medium mb-2 text-center">Введите код</h2>
@@ -88,9 +88,10 @@
                     class="px-4 py-2 mb-4 bg-emerald-500 text-gray-700 rounded block mx-auto w-[220px] hover:bg-emerald-400 transition-colors duration-300">
                 Подтвердить
             </button>
-            <p id="error-message" class="text-red-500 text-center mb-4 hidden"></p>
+            <p id="error-message" class="text-red-500 text-center mb-2 hidden"></p>
+            <button id="resend-button" type="button" class="hidden mx-auto w-[220px] hover:text-emerald-500 transition-colors duration-300">Получить новый код</button>
         </form>
     </div>
-    
+
 {% endblock %}
 
