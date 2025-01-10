@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalCode = document.getElementById('modal-code'); // Форма ввода кода
     const modalContent = document.getElementById('login-modal-content');
     const authButtons = document.getElementById('auth-header'); // Контейнер с кнопками
-    // const isCodeExpired = sessionStorage.getItem('isCodeExpired');
+    const emailButton = document.getElementById('email-link');
+    const modalFooter = document.getElementById('footer-modal');
 
     // Обработчик открытия модального окна
     openModalButton.addEventListener('click', () => {
@@ -17,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const registrationInProgress = localStorage.getItem('registrationInProgress');
 
         if (registrationInProgress === 'true') {
-            fetch('/users/check-code-status/', {
+            fetch('/users/check-code-status/', { // TODO избавиться от хардкода
                 method: 'GET',
                 credentials: 'include',
             })
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Если код действителен, показываем ввод кода
                         authButtons.classList.add('hidden');
                         authForm.classList.add('hidden');
+                        modalFooter.classList.add('hidden');
                         registerForm.classList.add('hidden');
                         modalCode.classList.remove('hidden');
                         modalContent.style.height = '250px';
@@ -40,13 +42,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // По умолчанию открыть форму авторизации
             authButtons.classList.remove('hidden');
+            modalFooter.classList.add('hidden');
             authForm.classList.remove('hidden');
             document.getElementById('auth-link').classList.add('underline', "underline-offset-4", "decoration-gray-300");
             document.getElementById('register-link').classList.remove('underline', "underline-offset-4", "decoration-gray-300");
             registerForm.classList.add('hidden');
             modalCode.classList.add('hidden');
             modalContent.style.height = '380px';
-            phoneInputLogin.value = '+7 ';
             phoneInputLogin.focus();
         }
     });
@@ -71,18 +73,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Удаляем все символы, кроме цифр окно ЛОГИН
-    phoneInputLogin.addEventListener('input', (event) => {
-        const rawValue = phoneInputLogin.value.replace(/\D/g, '');
-        const formattedValue = formatPhoneNumber(rawValue);
-        phoneInputLogin.value = formattedValue;
-    });
 
-    // Запрещаем удаление +7 с помощью Backspace и Delete окно ЛОГИН
-    phoneInputLogin.addEventListener('keydown', (event) => {
-        const cursorPosition = phoneInputLogin.selectionStart;
-        if ((event.key === 'Backspace' || event.key === 'Delete') && cursorPosition <= 3) {
-            event.preventDefault();
+    // Исходная высота модального окна
+    // TODO по всему скрипту есть несколько мест где меняется высота окон,
+    //  надо эти значения вынести в отдельные переменные, для дальнейше простоты внесения изменений - ищи по "modalContent.style.height"
+    const initialHeight = '380px'; // Укажите вашу исходную высоту
+    const expandedHeight = '540px'; // Увеличенная высота
+
+    emailButton.addEventListener('click', () => {
+        if (modalContent) {
+            // Проверяем текущую высоту и переключаем её
+            if (modalContent.style.height === expandedHeight) {
+                modalContent.style.height = initialHeight; // Возвращаем к исходной высоте
+                modalFooter.classList.add('hidden');
+            } else {
+                modalContent.style.height = expandedHeight; // Устанавливаем увеличенную высоту
+                modalFooter.classList.remove('hidden');
+            }
         }
     });
 
@@ -101,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             registerForm.classList.add('hidden');
             authForm.classList.remove('hidden');
+            modalFooter.classList.add('hidden');
             modalContent.style.height = '380px'; // Высота для авторизации
             document.getElementById('auth-link').classList.add('underline', "underline-offset-4", "decoration-gray-300");
             document.getElementById('register-link').classList.remove('underline', "underline-offset-4", "decoration-gray-300");
@@ -109,11 +117,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
-//JSON и проверка полей
+//JSON и проверка полей формы регистрации
 document.addEventListener('DOMContentLoaded', function () {
-    const registerForm = document.getElementById('email-code-form');
+    const registerForm = document.getElementById('reg-code-form');
     const smsButton = document.getElementById('send-code-sms');
     const emailButton = document.getElementById('send-code-email');
+    const email = document.getElementById('email');
     const fields = registerForm.querySelectorAll('[name="first_name"], [name="last_name"], [name="email"], [name="contact_input_number"]');
     const phoneInput = document.querySelector('[data-real-name="phone_number"]');
     const authForm = document.getElementById('auth-form');
@@ -124,84 +133,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalContactInfoMethods = document.getElementById('modalContactInfoMethods');
 
     // Установка начального значения и блокировка удаления +7
-    phoneInput.value = '+7 ';
-    phoneInput.addEventListener('keydown', function (e) {
-        if (phoneInput.selectionStart < 3 && e.key === 'Backspace') {
-            e.preventDefault(); // Блокируем удаление +7
-        }
-    });
+    setupPhoneInput(phoneInput);
 
     // Форматирование номера телефона
-    phoneInput.addEventListener('input', function (e) {
-        const rawValue = phoneInput.value.replace(/\D/g, ''); // Удаляем всё кроме цифр
-        const formattedValue = formatPhoneNumber(rawValue);
-        phoneInput.value = formattedValue;
+    setupPhoneFormatting(phoneInput);
 
-    });
-
-    // Форматирование телефона в формате +7 000 000 00 00
-    function formatPhoneNumber(value) {
-        let formatted = '+7 ';
-        if (value.length > 1) formatted += value.substring(1, 4);
-        if (value.length > 4) formatted += ' ' + value.substring(4, 7);
-        if (value.length > 7) formatted += ' ' + value.substring(7, 9);
-        if (value.length > 9) formatted += ' ' + value.substring(9, 11);
-        return formatted.trim();
-    }
-
-    // Обработчик проверки заполненности всех полей
-    const checkFormValidity = () => {
-        let isValid = true;
-
-        fields.forEach(field => {
-            if (!field.value.trim()) {
-                isValid = false;
-            }
-        });
-
-        // Проверка корректности email
-        const emailField = document.getElementById('email');
-        if (!isValidEmail(emailField.value.trim())) {
-            isValid = false;
-        }
-
-        // Проверяем корректность номера телефона
-        if (!validatePhoneNumber()) {
-            isValid = false;
-        }
-
-        // Активируем или деактивируем кнопку отправки кода по email
-        emailButton.disabled = !isValid;
-        emailButton.classList.toggle('opacity-50', !isValid);
-        emailButton.classList.toggle('text-gray-700', isValid);
-        emailButton.classList.toggle('hover:text-emerald-500', isValid);
-
-
-        // Активируем или деактивируем кнопку отправки кода по SMS
-        smsButton.disabled = !isValid;
-        smsButton.classList.toggle('opacity-50', !isValid);
-        smsButton.classList.toggle('bg-gray-400', !isValid);
-        smsButton.classList.toggle('bg-emerald-500', isValid);
-        smsButton.classList.toggle('text-gray-700', isValid);
-        smsButton.classList.toggle('hover:bg-emerald-400', isValid);
-    };
-
-    // Обработчик для проверки формы на каждом изменении поля
+    // Проверка валидности формы
     fields.forEach(field => {
-        field.addEventListener('input', checkFormValidity);
+        field.addEventListener('input', () => {
+            checkFormValidity(fields, phoneInput, email, smsButton, emailButton);
+        });
     });
-
-    // Проверка поля email с использованием регулярного выражения
-    function isValidEmail(email) {
-        var pattern = new RegExp(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,4})+$/);
-        return pattern.test(email);
-    }
-
-    // Проверка номера телефона (возвращает true, если номер валиден)
-    function validatePhoneNumber() {
-        const rawValue = phoneInput.value.replace(/\D/g, ''); // Удаляем всё кроме цифр
-        return rawValue.length === 11; // Длина должна быть ровно 11 цифр
-    }
 
     // Функция отправки данных
     function sendCode(sendType) {
@@ -314,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 }
 
                                 // Создаем запрос с данными
-                                fetch('/users/resend_code/', {
+                                fetch('/users/resend_code/', { // TODO избавиться от хардкода
                                     method: 'POST',
                                     body: JSON.stringify({
                                         send_type: sendType,
@@ -380,3 +322,69 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 });
+
+//JSON и проверка полей формы авторизации
+document.addEventListener('DOMContentLoaded', function () {
+    const authForm = document.getElementById('auth-code-form');
+    const fieldsAuthSMS = authForm.querySelectorAll('[name="auth_contact_input_number"]');
+    const fieldsAuthEmail = authForm.querySelectorAll('[name="emailAuth"]');
+    const smsAuthButton = document.getElementById('auth-send-code-sms');
+    const emailAuthButton = document.getElementById('auth-send-code-email');
+    const phoneAuthInput = document.getElementById('contact_input_number_login');
+    const emailAuthInput = document.getElementById('email_auth');
+
+
+
+    const authModal = document.getElementById('auth-form');
+    const modalCode = document.getElementById('modal-code');
+    const authButtons = document.getElementById('auth-header');
+    const modalContent = document.getElementById('login-modal-content');
+    const modalContactInfo = document.getElementById('modalContactInfo');
+    const modalContactInfoMethods = document.getElementById('modalContactInfoMethods');
+
+
+    // Установка начального значения и блокировка удаления +7
+    setupPhoneInput(phoneAuthInput);
+
+    // Форматирование номера телефона
+    setupPhoneFormatting(phoneAuthInput);
+
+    // Проверка валидности поля ввода номера телефона
+    fieldsAuthSMS.forEach(field => {
+        field.addEventListener('input', () => {
+            checkFormValidity(fieldsAuthSMS, phoneAuthInput, null, smsAuthButton, null);
+        });
+    });
+
+    // Проверка валидности поля email
+    const checkFormValidityEmail = () => {
+        let isValid = true;
+
+        fieldsAuthEmail.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+            }
+        });
+
+        // Проверка корректности email
+
+        if (!isValidEmail(emailAuthInput.value.trim())) {
+            isValid = false;
+        }
+
+        // Активируем или деактивируем кнопку отправки кода по SMS
+        emailAuthButton.disabled = !isValid;
+        emailAuthButton.classList.toggle('opacity-50', !isValid);
+        emailAuthButton.classList.toggle('bg-gray-400', !isValid);
+        emailAuthButton.classList.toggle('bg-emerald-500', isValid);
+        emailAuthButton.classList.toggle('text-gray-700', isValid);
+        emailAuthButton.classList.toggle('hover:bg-emerald-400', isValid);
+    };
+
+    // Обработчик для проверки поля ввода email на каждом изменении поля
+    fieldsAuthEmail.forEach(field => {
+        field.addEventListener('input', checkFormValidityEmail);
+    });
+
+});
+

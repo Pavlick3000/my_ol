@@ -11,6 +11,7 @@ from users.forms import CustomUserCreationForm
 from users.models import CustomUser
 from my_ol import settings
 from .utils import send_sms
+
 User = get_user_model()
 
 def user_logout(request):
@@ -20,6 +21,16 @@ def user_logout(request):
     return redirect(referer_url)
 
 def login(request):
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "send_sms":
+            # Логика отправки SMS
+            print('SMS')
+            pass
+        elif action == "send_email":
+            # Логика отправки email
+            print('email')
+            pass
     return render(request, 'users/login.html')
 
 def signup(request):

@@ -1,35 +1,79 @@
 {% extends 'users/base.html' %}
 {% load static %}
 {% block content %}
-
+    
     <!-- Форма авторизации -->
     <div id="auth-form">
-        <form method="post" action="{% url 'users:login' %}">
+        <form id="auth-code-form" method="post" action="{% url 'users:login' %}">
             {% csrf_token %}
-            <div>
+            <!-- Блок ввода номера телефона -->
+            <div id="auth-sms-head">
                 <label class="block text-center mb-2 text-lg font-medium text-gray-700">Номер телефона</label>
-                <label class="block text-center mb-1 text-sm font-extralight text-gray-700">Введите номера телефона, и мы отправим</label>
+                <label class="block text-center mb-1 text-sm font-extralight text-gray-700">Введите номер телефона, и мы отправим</label>
                 <label class="block text-center mb-2 text-sm font-extralight text-gray-700">СМС с кодом подтверждения</label>
-                <label for="contact_input_number_login"></label>
                 <input
                         type="text"
                         id="contact_input_number_login"
-                        name="contact_input_number"
+                        name="auth_contact_input_number"
                         class="contact_input_number block mb-2 text-center mx-auto w-[220px] p-2 border rounded focus:outline-none focus:ring-0 focus:border-gray-200"
                         maxlength="16"
                         autocomplete="new-password">
             </div>
-            <button class="px-4 py-2 mb-6 bg-emerald-500 text-gray-700 rounded block mx-auto w-[220px] hover:bg-emerald-400 transition-colors duration-300">Получить код по СМС</button> <!-- TODO кнопка должна быть неактивной пока не введен номер телефона -->
+
+            <!-- Кнопка отправки кода через SMS -->
+            <button
+                    type="submit"
+                    id="auth-send-code-sms"
+                    name="action"
+                    value="send_sms"
+                    class="px-4 py-2 mb-6 bg-gray-400 text-gray-700 rounded block mx-auto w-[220px] opacity-50 transition-colors duration-300"
+                    disabled>
+                Получить код по СМС
+            </button>
+
+            <!-- Разделитель "или"-->
             <label class="relative block text-center mb-2 text-sm font-extralight text-gray-700 before:content-[''] before:absolute before:left-0 before:top-1/2 before:w-2/5 before:border-t before:border-gray-300 before:mr-2 after:content-[''] after:absolute after:right-0 after:top-1/2 after:w-2/5 after:border-t after:border-gray-300 after:ml-2">
                 или
             </label>
-            <button class="block mx-auto px-4 py-2 font-extralight text-gray-700 hover:text-emerald-500 transition-colors duration-300">Получить код на почту</button>
+
+            <!-- Кнопка для открытия поля email и кнопки отправки кода на почту -->
+            <button
+                    type="button"
+                    id="email-link"
+                    class="block mx-auto px-4 py-2 font-extralight text-gray-700 hover:text-emerald-500 transition-colors duration-300">
+                Получить код на почту
+            </button>
+
+            <!-- Блок ввода email -->
+            <div id="footer-modal" class="hidden">
+                <label class="block text-center mb-1 text-sm font-extralight text-gray-700">Введите почтовый адрес, и мы отправим</label>
+                <label class="block text-center mb-2 text-sm font-extralight text-gray-700">письмо с кодом подтверждения</label>
+                <div class="mb-4">
+                    <input
+                            type="email"
+                            name="emailAuth"
+                            id="email_auth"
+                            class="block text-left mx-auto w-[220px] p-2 border rounded mb-4 focus:outline-none focus:ring-0 focus:border-gray-200"
+                            placeholder="Введите email"
+                            >
+                </div>
+                <button
+                        type="submit"
+                        id="auth-send-code-email"
+                        name="action"
+                        value="send_email"
+                        class="px-4 py-2 mb-6 bg-gray-400 text-gray-700 rounded block mx-auto w-[220px] opacity-50 transition-colors duration-300"
+                        >
+                    Получить код на почту
+                </button>
+            </div>
         </form>
     </div>
 
+    
     <!-- Форма регистрации -->
     <div id="register-form" class="hidden">
-        <form id="email-code-form" method="post" action="{% url 'users:signup' %}" data-signup-url="{% url 'users:signup' %}">
+        <form id="reg-code-form" method="post" action="{% url 'users:signup' %}" data-signup-url="{% url 'users:signup' %}">
             {% csrf_token %}
             <div class="mb-1">
                 <label>
