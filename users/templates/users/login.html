@@ -1,7 +1,7 @@
 {% extends 'users/base.html' %}
 {% load static %}
 {% block content %}
-    
+
     <!-- Форма авторизации -->
     <div id="auth-form">
         <form id="auth-code-form" method="post" action="{% url 'users:login' %}">
@@ -70,7 +70,7 @@
         </form>
     </div>
 
-    
+
     <!-- Форма регистрации -->
     <div id="register-form" class="hidden">
         <form id="reg-code-form" method="post" action="{% url 'users:signup' %}" data-signup-url="{% url 'users:signup' %}">
