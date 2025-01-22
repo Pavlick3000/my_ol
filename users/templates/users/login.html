@@ -4,7 +4,7 @@
 
     <!-- Форма авторизации -->
     <div id="auth-form">
-        <form id="auth-code-form" method="post" action="{% url 'users:login' %}">
+        <form id="auth-code-form" method="post" action="{% url 'users:login' %}" data-login-url="{% url 'users:login' %}">
             {% csrf_token %}
             <!-- Блок ввода номера телефона -->
             <div id="auth-sms-head">
@@ -24,8 +24,6 @@
             <button
                     type="submit"
                     id="auth-send-code-sms"
-                    name="action"
-                    value="send_sms"
                     class="px-4 py-2 mb-6 bg-gray-400 text-gray-700 rounded block mx-auto w-[220px] opacity-50 transition-colors duration-300"
                     disabled>
                 Получить код по СМС
@@ -51,7 +49,7 @@
                 <div class="mb-4">
                     <input
                             type="email"
-                            name="emailAuth"
+                            name="email"
                             id="email_auth"
                             class="block text-left mx-auto w-[220px] p-2 border rounded mb-4 focus:outline-none focus:ring-0 focus:border-gray-200"
                             placeholder="Введите email"
@@ -60,8 +58,6 @@
                 <button
                         type="submit"
                         id="auth-send-code-email"
-                        name="action"
-                        value="send_email"
                         class="px-4 py-2 mb-6 bg-gray-400 text-gray-700 rounded block mx-auto w-[220px] opacity-50 transition-colors duration-300"
                         >
                     Получить код на почту

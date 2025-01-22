@@ -26,9 +26,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Функция отправки данных
-    function sendCode(sendType) {
+    function sendCode(sendType, authProcess) {
         const formData = new FormData(registerForm);
         formData.append('send_type', sendType); // Добавляем тип отправки (SMS или Email)
+        formData.append('auth_process', authProcess);
 
         const rawPhoneValue = phoneInput.value.replace(/\s+/g, '');
         formData.set('phone_number', rawPhoneValue); // Устанавливаем отформатированный номер
@@ -37,6 +38,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Сохраняем данные, которые понадобятся для повторной отправки
         localStorage.setItem('sendType', sendType);
+        localStorage.setItem('authProcess', authProcess);
         localStorage.setItem('phoneNumber', rawPhoneValue);
         localStorage.setItem('email', document.getElementById('email').value);
         localStorage.setItem('first_name', document.getElementById('first_name').value);
@@ -98,6 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.success) {
                     // Успешная обработка
                     localStorage.removeItem('registrationInProgress'); // Процесс регистрации завершен
+                    localStorage.removeItem('authInProgress'); // Процесс авторизации завершен
                     location.reload(); // Остаемся на той же странице, откуда начали регистрацию
                 } else {
                     let errorMessageElement = document.getElementById('error-message');
@@ -124,6 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                                 // Получаем данные из localStorage или формы
                                 const sendType = localStorage.getItem('sendType');
+                                const authProcess = localStorage.getItem('authProcess');
                                 const phoneNumber = localStorage.getItem('phoneNumber');
                                 const email = localStorage.getItem('email');
                                 const first_name = localStorage.getItem('first_name');
@@ -140,6 +144,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     method: 'POST',
                                     body: JSON.stringify({
                                         send_type: sendType,
+                                        auth_process: authProcess,
                                         email: email,
                                         phone_number: phoneNumber,
                                         first_name: first_name,
@@ -193,12 +198,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // Обработчики кнопок
     smsButton.addEventListener('click', function (e) {
         e.preventDefault();
-        sendCode('sms');
+        sendCode('sms', 'False');
     });
 
     emailButton.addEventListener('click', function (e) {
         e.preventDefault();
-        sendCode('email');
+        sendCode('email','False');
     });
 
 });

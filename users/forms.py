@@ -2,10 +2,25 @@ from django.contrib.auth.forms import AuthenticationForm
 from users.models import CustomUser
 from django import forms
 
-class UserLoginForm (AuthenticationForm):
-    class Meta:
-        model = CustomUser
-        fields = ('phone_number',)
+# class UserLoginForm (AuthenticationForm):
+# class UserLoginForm (forms.Form):
+#     class Meta:
+#         model = CustomUser
+#         fields = ('phone_number', 'email')
+
+class UserLoginForm(forms.Form):
+    phone_number = forms.CharField(required=False)
+    email = forms.EmailField(required=False)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        phone_number = cleaned_data.get("phone_number")
+        email = cleaned_data.get("email")
+
+        if not phone_number and not email:
+            raise forms.ValidationError("Either phone number or email must be provided.")
+
+        return cleaned_data
 
 class CustomUserCreationForm(forms.ModelForm):
     class Meta:

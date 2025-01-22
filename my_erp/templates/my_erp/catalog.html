@@ -1,41 +1,47 @@
 {% extends 'my_erp/base.html' %}
 {% load custom_filters %}
+{% load static %}
 
 {% block content %}
     <main class="flex-grow p-1">
 
-        <button
-                onclick="toggleModal()"
+        <button id="open-newRec-modal"
+{#                onclick="toggleModal()"#}
+                onclick="toggleNewRecModal()"
                 class="px-4 py-2 bg-blue-500 text-white rounded mt-4 ml-8">
             Добавить запись
         </button>
 
         <!-- Форма "Добавить запись" -->
-        <div id="modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center  hidden">
-            <div class="bg-white p-6 rounded-lg w-full max-w-md">
+        <div id="newRecModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white p-6 rounded-lg w-full max-w-md shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out overflow-hidden">
+
+                <!-- Крестик для закрытия модального окна -->
+                <button id="close-newRec-modal" class="absolute top-2 right-2 p-2">
+                    <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
+                </button>
                 <h2 class="text-xl font-bold mb-4">Заполните форму</h2>
                 <!-- Форма -->
-                <form action="{% url 'catalog:index' %}" method="post">
+                <form id="newRecordForm" action="{% url 'catalog:newRecord' %}" method="post">
                     {% csrf_token %}
 
-                    <label class="block mb-2 text-sm font-medium text-gray-700">
-                        Наименование
-                    </label>
-                    {{ form.name }}
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Наименование</label>
+                    <input id="newElementName" name="name" type="text" class="block w-full p-2 border rounded mb-4">
 
-                    <label class="block mb-2 text-sm font-medium text-gray-700">
-                        Вид воспроизводства
-                    </label>
-                    {{ form.type_of_reproduction }}
-
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Вид воспроизводства</label>
+                    <select id="elementTypeOfReproductionNewRec" name="type_of_reproduction" class="block w-full p-2 border rounded mb-4">
+                        <!-- Опции будут добавлены динамически через JavaScript -->
+                    </select>
+                    
                     <label class="block mb-2 text-sm font-medium text-gray-700">
                         Единица измерения
                     </label>
-                    {{ form.basic_unit }}
+                    <select id="elementBasicUnitNewRec" name="basic_unit" type="text" class="block w-full p-2 border rounded mb-4">
+                        <!-- Опции будут добавлены динамически через JavaScript -->
+                    </select>
 
                     <div class="flex justify-center space-x-2 mt-4">
                         <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Отправить</button>
-                        <button type="button" onclick="toggleModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded">Закрыть</button>
                     </div>
                 </form>
             </div>

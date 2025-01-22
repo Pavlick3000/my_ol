@@ -17,7 +17,7 @@ class NomencBookForm(forms.ModelForm):
     class Meta:
         model = NomencBook
         exclude = ['db_id']
-        fields = ('name','type_of_reproduction', 'basic_unit')  # Вы можете указать конкретные поля, если нужно
+        fields = ('name','type_of_reproduction', 'basic_unit')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

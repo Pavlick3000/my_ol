@@ -1,74 +1,37 @@
-// Слушатель для каждого элемента таблицы, чтобы отслеживать клики
-document.querySelectorAll('tbody tr').forEach(item => {item.addEventListener('contextmenu', handleCellClick);});
+// Функция для открытия и закрытия модального окна (Форма "Новая запись")
+async function toggleNewRecModal() {
+    const modalRec = document.getElementById('newRecModal');
+    const openModalButton = document.getElementById('open-newRec-modal');
+    const closeModalButton = document.getElementById('close-newRec-modal');
 
-// Меню по нажатию ПКМ на запись в таблице
-function handleCellClick(event) {
-    // Отменяем стандартное контекстное меню правой кнопки мыши
-    event.preventDefault();
+    // Открываем/закрываем модальное окно
+    modalRec.classList.toggle('hidden');
+    await fetchSelectOptions(); // Подгружаем данные для выпадающих списков
 
-    // Получите координаты клика
-    const x = event.clientX;
-    const y = event.clientY;
+    // Обработчик закрытия модального окна для крестика
+    closeModalButton.addEventListener('click', () => {
+        modalRec.classList.add('hidden');
+    });
 
-    const modal = document.getElementById('actionModal');
-
-    modal.style.left = `${x}px`;
-    modal.style.top = `${y}px`;
-    modal.style.position = 'absolute';
-    modal.classList.remove('hidden');
-
-    // Добавьте обработчики для кнопок
-    document.getElementById('editRecord').onclick = () => {
-        if (confirm('Изменить?')) {
-            window.location.href = `/edit/${recordId}/`;}
-    };
-    document.getElementById('deleteRecord').onclick = () => {
-        if (confirm('Вы уверены, что хотите удалить эту запись?')) {
-            window.location.href = `/delete/${recordId}/`;}
-    };
-}
-
-// Функции для закрытия меню по нажатию ПКМ
-function setupModalListeners(modalId) {
-    const modal = document.getElementById(modalId);
-    const closeButton = modal.querySelector('.close-modal');
-
-    // Функция закрытия модального окна
-    function closeModal() {
-        modal.classList.add('hidden');
-    }
-
-    // Закрытие при клике вне области модального окна
-    document.addEventListener('click', (event) => {
-        if (!modal.classList.contains('hidden') && !modal.contains(event.target)) {
-            closeModal();
+    // Закрытие модального окна при клике вне его
+    modalRec.addEventListener('click', (event) => {
+        if (event.target === modalRec) {
+            modalRec.classList.add('hidden');
         }
     });
 
-    // Закрытие по нажатию клавиши ESC
+    // Закрытие модального окна по нажатию Esc
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            closeModal();
+        if (event.key === 'Escape' && !modalRec.classList.contains('hidden')) {
+            modalRec.classList.add('hidden');
+            openModalButton.blur(); // Снимаем фокус с кнопки
         }
     });
-
-    // Закрытие по кнопке внутри модального окна
-    closeButton.addEventListener('click', closeModal);
-}
-
-// Инициализация обработчиков для модального окна с ID 'actionModal'
-setupModalListeners('actionModal');
-
-// Функция для открытия и закрытия модального окна (Форма "Добавить запись")
-function toggleModal() {
-    const modal = document.getElementById('modal');
-    modal.classList.toggle('hidden');
 }
 
 // Функция для открытия и закрытия модального окна (Форма "Изменить запись")
 async function toggleEditModal(row = null) {
     const modal = document.getElementById('editmodal');
-    // const selectedReproduction = document.querySelector('#reproduction-select').getAttribute('data-selected-value');
     const modalContent = modal.querySelector('.modal-content'); // Основной контент модального окна
     if (row) {
         // Получаем данные из атрибутов data-*
@@ -115,27 +78,31 @@ async function toggleEditModal(row = null) {
     });
 }
 
-// JSON
+// JSON "Изменить запись"
 document.getElementById("editForm").addEventListener("submit", async function (event) {
     event.preventDefault(); // Предотвращаем стандартное поведение формы
 
     const form = event.target;
     const formData = new FormData(form);
     const actionUrl = form.action;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
 
     try {
         const response = await fetch(actionUrl, {
             method: 'POST',
             body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken,
+            },
         });
 
         if (response.ok) {
-            const data = await response.json();
             toggleEditModal(); // Закрываем модальное окно
-            window.location.reload(); // Обновляем страницу
-            alert("Запись успешно обновлена!");
-
-
+            updateTable();
+        } else if (response.status === 403) {
+            const errorHtml = await response.text(); // Предполагаем, что сервер возвращает HTML модального окна
+            showModal(errorHtml); // Отображаем модальное окно
         } else {
             const errorData = await response.json();
             alert("Ошибка при обновлении записи: " + JSON.stringify(errorData));
@@ -147,7 +114,46 @@ document.getElementById("editForm").addEventListener("submit", async function (e
     }
 });
 
-// Для заполнения выпадающих списков в окне редактирования
+// JSON "Добавить запись"
+document.getElementById("newRecordForm").addEventListener("submit", async function (event) {
+    event.preventDefault(); // Предотвращаем стандартное поведение формы
+
+    const form = event.target;
+    const formData = new FormData(form); // Собираем данные формы
+    const actionUrl = form.action; // URL для отправки
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value; // CSRF-токен
+
+    try {
+        const response = await fetch(actionUrl, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken,
+            },
+        });
+
+        if (response.ok) {
+            const responseData = await response.json();
+            if (responseData.status === "success") {
+                toggleNewRecModal(); // Закрываем модальное окно
+                updateTable(); // Обновляем таблицу
+            } else {
+                alert("Ошибка: " + responseData.message); // Обрабатываем сообщение об ошибке
+            }
+        } else if (response.status === 403) {
+            const errorHtml = await response.text(); // Предполагаем, что сервер возвращает HTML модального окна
+            showModal(errorHtml); // Отображаем модальное окно
+        } else {
+            const errorData = await response.json();
+            alert("Ошибка при создании записи: " + JSON.stringify(errorData)); // Обработка ошибок
+        }
+    } catch (error) {
+        console.error("Ошибка отправки формы:", error);
+        alert("Произошла ошибка при отправке формы.");
+    }
+});
+
+// Для заполнения выпадающих списков в окне "Изменить запись"
 async function loadSelectOptions(selectedReproduction, selectedBasicUnit) {
     const reproductionSelect = document.getElementById("elementTypeOfReproduction");
     const basicUnitSelect = document.getElementById("elementBasicUnit");
@@ -185,6 +191,37 @@ async function loadSelectOptions(selectedReproduction, selectedBasicUnit) {
     } catch (error) {
         console.error("Ошибка загрузки опций:", error);
         alert("Не удалось загрузить данные для выпадающих списков.");
+    }
+}
+
+// Для заполнения выпадающих списков в окне "Новая запись"
+async function fetchSelectOptions() {
+    try {
+        const response = await fetch('getSelectOptions/');
+
+        const data = await response.json();
+
+        // Обработка данных для поля "Вид воспроизводства"
+        const reproductionSelect = document.getElementById('elementTypeOfReproductionNewRec');
+        reproductionSelect.innerHTML = ''; // Очистка текущих опций
+        data.reproduction_choices.forEach((choice) => {
+            const option = document.createElement('option');
+            option.value = choice.reproduction; // Значение для отправки
+            option.textContent = choice.name; // Текст для отображения
+            reproductionSelect.appendChild(option);
+        });
+
+        // Обработка данных для поля "Единица измерения"
+        const basicUnitSelect = document.getElementById('elementBasicUnitNewRec');
+        basicUnitSelect.innerHTML = ''; // Очистка текущих опций
+        data.basic_units.forEach((unit) => {
+            const option = document.createElement('option');
+            option.value = unit.db_id; // Значение для отправки
+            option.textContent = unit.name; // Текст для отображения
+            basicUnitSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки данных для выпадающих списков:', error);
     }
 }
 
@@ -228,6 +265,22 @@ function sortTable(columnIndex) {
     }
 }
 
+// Функция для отображения модального окна с ошибкой о правах
+function showModal(content) {
+    // Создаем контейнер модального окна
+    const modalContainer = document.createElement("div");
+    modalContainer.innerHTML = content;
+    document.body.appendChild(modalContainer);
+
+    // Обработчик закрытия модального окна
+    const closeModalButton = modalContainer.querySelector("#closeModal");
+    if (closeModalButton) {
+        closeModalButton.addEventListener("click", () => {
+            modalContainer.remove();
+        });
+    }
+}
+
 // Функция подтверждения удаления
 function confirmDeletion() {
     const elementId = document.getElementById("elementId").value;
@@ -240,11 +293,14 @@ function confirmDeletion() {
                 'X-CSRFToken': getCookie('csrftoken') // Получение CSRF-токена
             }
         })
-        .then(response => {
+        .then(async response => {
             if (response.ok) {
-                alert("Запись успешно удалена!");
+                // alert("Запись успешно удалена!");
                 toggleEditModal();
-                window.location.reload(); // Обновляем страницу
+                updateTable(); // Обновляем таблицу
+            } else if (response.status === 403) {
+                const errorHtml = await response.text(); // Предполагаем, что сервер возвращает HTML модального окна
+                showModal(errorHtml); // Отображаем модальное окно
             } else {
                 alert("Ошибка при удалении записи.");
             }
@@ -254,22 +310,6 @@ function confirmDeletion() {
             alert("Ошибка при удалении записи.");
         });
     }
-}
-
-// Функция для получения CSRF-токена
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
 }
 
 // Поле поиск

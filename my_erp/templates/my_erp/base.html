@@ -21,6 +21,9 @@
                         ERP-Hermes logo
                     </a>
                 </h1>
+                <button class="my-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700" onclick="updateTable()">
+                    Обновить таблицу
+                </button>
                 <!-- Кнопка "Выход" -->
                 <form action="{% url 'users:logout' %}" method="post">
                     {% csrf_token %}
@@ -60,6 +63,8 @@
             Иконки от <a target="_blank" href="https://icons8.com">Icons8</a>
         </footer>
         
+        <script src="{% static 'js/forTable/utils.js' %}"></script>
+        <script src="{% static 'js/user/utils.js' %}"></script>
         <script src="{% static 'js/main.js' %}"></script>
 
     </body>

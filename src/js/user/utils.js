@@ -79,3 +79,7 @@ function checkFormValidity(fields, phoneInput= null, emailField = null, smsButto
         emailButton.classList.toggle('hover:text-emerald-500', isValid);
     }
 }
+
+function clearPhoneNumber() {
+    document.getElementById('contact_input_number_login').value = '+7 ';
+}

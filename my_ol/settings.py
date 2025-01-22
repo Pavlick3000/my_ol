@@ -180,7 +180,10 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config['EMAIL_HOST_USER']
 EMAIL_HOST_PASSWORD = config['EMAIL_HOST_PASSWORD']
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 SESSION_CACHE_ALIAS = 'default'
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Сессия будет закрыта при закрытии браузера
+SESSION_COOKIE_SECURE = False  # Установите True, если используется HTTPS
+SESSION_COOKIE_HTTPONLY = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Сессия будет закрыта при закрытии браузера
 SESSION_COOKIE_AGE = 3600  # Время жизни сессии в секундах (1 час)
+
