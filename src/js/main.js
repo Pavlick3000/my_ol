@@ -78,7 +78,7 @@ async function toggleEditModal(row = null) {
     });
 }
 
-// JSON "Изменить запись"
+// "Изменить запись"
 document.getElementById("editForm").addEventListener("submit", async function (event) {
     event.preventDefault(); // Предотвращаем стандартное поведение формы
 
@@ -114,7 +114,7 @@ document.getElementById("editForm").addEventListener("submit", async function (e
     }
 });
 
-// JSON "Добавить запись"
+// "Добавить запись"
 document.getElementById("newRecordForm").addEventListener("submit", async function (event) {
     event.preventDefault(); // Предотвращаем стандартное поведение формы
 
