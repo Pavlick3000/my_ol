@@ -17,11 +17,11 @@ from .models import NomencBook, ProductionTypeBook, BasicUnitBook, NomencUnitBoo
 from my_erp.forms import NomencBookForm
 
 # Декоратор проверки прав
-def group_required(group_name):
+def group_required(*group_name):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            if not request.user.groups.filter(name=group_name).exists():
+            if not request.user.groups.filter(name__in=group_name).exists():
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':  # Проверяем, AJAX ли запрос
                     return render(request, 'my_erp/no_modal.html', status=403)
                 else:
@@ -41,6 +41,8 @@ def index(request):
     return render(request, 'my_erp/index.html', context)
 
 # Представление для страницы Каталог
+@group_required("Конструктор", "Гость")
+@login_required
 def catalog(request):
     nbook = NomencBook.objects.only('id','type_of_reproduction', 'basic_unit', 'field_code', 'name').order_by('-id')
 
