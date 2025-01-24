@@ -40,15 +40,6 @@ def index(request):
             }
     return render(request, 'my_erp/index.html', context)
 
-# def index(request):
-#     session_key = request.session.session_key
-#     print("Текущий номер сессии:", session_key)
-#     context = {
-#         'title': 'ERP - main',
-#         'is_promotion': False,
-#             }
-#     return render(request, 'my_erp/index.html', context)
-
 # Представление для страницы Каталог
 @group_required("Конструктор", "Гость")
 @login_required
