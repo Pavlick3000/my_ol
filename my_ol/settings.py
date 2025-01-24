@@ -13,8 +13,9 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from dotenv import dotenv_values
 import os
+import ssl
 
-from Different_tests.Copies.settings1 import STATIC_ROOT
+# from Different_tests.Copies.settings1 import STATIC_ROOT
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -154,7 +155,6 @@ STATICFILES_DIRS = [BASE_DIR / "src"]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Надо сюда будет подставлять данные из файла .env, чтобы не менять настройки под лОкал и хост
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -173,12 +173,14 @@ INTERNAL_IPS = [
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'users.custom_email_backend.CustomEmailBackend'
 EMAIL_HOST = config['EMAIL_HOST']
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config['EMAIL_HOST_USER']
 EMAIL_HOST_PASSWORD = config['EMAIL_HOST_PASSWORD']
+
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 SESSION_CACHE_ALIAS = 'default'
