@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from my_erp.views import index, catalog
 from my_ol import settings
+from debug_toolbar.toolbar import debug_toolbar_urls
 
 urlpatterns = [
     path('', index, name='index'),

@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from dotenv import dotenv_values
 import os
-import ssl
 
 # from Different_tests.Copies.settings1 import STATIC_ROOT
 
@@ -167,6 +166,9 @@ CACHES = {
 
 INTERNAL_IPS = [
     '127.0.0.1',
+  	'185.72.146.136',
+  	'185.72.146.135',
+  	'78.140.214.30',
 ]
 
 # Users
