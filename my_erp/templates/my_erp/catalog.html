@@ -110,6 +110,7 @@
                     <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(2)">Наименование</th>
                     <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(3)">Вид воспроизводства</th>
                     <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(4)">Ед.</th>
+                    <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(4)">Кол-во</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -120,14 +121,16 @@
                         data-name="{{ product.name }}"
                         data-type-of-reproduction="{{ type_of_reproduction_choices|dict_get:product.type_of_reproduction }}"
                         data-basic-unit="{{ basic_unit_choices|dict_get:product.basic_unit }}"
+                        data-qnt="{{ product.qnt|default:0|floatformat:-3 }}"
                         data-url="{% url 'catalog:editCatalog' id=product.id %}"
                         onclick="toggleEditModal(this)">
 
                         <td class="font-light">{{ product.id }}</td>
                         <td>{{ product.field_code }}</td>
                         <td class="font-medium">{{ product.name }}</td>
-                        <td>{{ type_of_reproduction_choices|dict_get:product.type_of_reproduction }}</td>
-                        <td>{{ basic_unit_choices|dict_get:product.basic_unit }}</td>
+                        <td class="text-center">{{ type_of_reproduction_choices|dict_get:product.type_of_reproduction }}</td>
+                        <td class="text-center">{{ basic_unit_choices|dict_get:product.basic_unit }}</td>
+                        <td class="text-center">{{ product.qnt|default:0|floatformat:-3 }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

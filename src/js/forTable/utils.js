@@ -1,5 +1,6 @@
 // Функция перерисовки таблицы после обновления данных
 function renderTable(data) {
+    console.log(data);
     const tbody = document.querySelector('#productTable tbody');
     tbody.innerHTML = ''; // Очищаем текущие строки
 
@@ -11,15 +12,20 @@ function renderTable(data) {
         row.dataset.name = product.name;
         row.dataset.typeOfReproduction = product.type_of_reproduction;
         row.dataset.basicUnit = product.basic_unit;
+        row.dataset.qnt = product.qnt;
         row.dataset.url = product.url;
         row.onclick = () => toggleEditModal(row);
+
+        // Заменяем значение qnt на 0, если оно null или undefined
+        const qnt = product.qnt == null ? 0 : product.qnt;
 
         row.innerHTML = `
             <td class="font-light">${product.id}</td>
             <td>${product.field_code}</td>
             <td class="font-medium">${product.name}</td>
-            <td>${product.type_of_reproduction}</td>
-            <td>${product.basic_unit}</td>
+            <td class="text-center">${product.type_of_reproduction}</td>
+            <td class="text-center">${product.basic_unit}</td>
+            <td class="text-center">${qnt}</td> <!-- Используем qnt, замененный на 0, если оно null или undefined -->
         `;
         tbody.appendChild(row);
     });
@@ -41,7 +47,8 @@ async function updateTable(recordId = null) {
     }
 
     const data = await response.json();
-    console.log("Received data:", data);
+    console.log("Received full response:", data);
+    console.log("Received data:", data.data);
     renderTable(data.data);
 }
 

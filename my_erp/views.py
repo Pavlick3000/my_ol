@@ -4,8 +4,6 @@ from functools import wraps
 from django.contrib.auth.decorators import login_required
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from django.contrib.sessions.models import Session
-from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 
 from django.http import JsonResponse, HttpResponseForbidden
@@ -32,19 +30,19 @@ def group_required(*group_name):
 
 # Представление главной страницы
 def index(request):
-    session_key = request.session.session_key
-    print("Текущий номер сессии:", session_key)
+    user_groups = request.user.groups.values_list('name', flat=True)
+    can_view_catalog = "Гость" in user_groups or "Конструктор" in user_groups
+
     context = {
         'title': 'ERP - main',
         'is_promotion': False,
-            }
+        'can_view_catalog': can_view_catalog,
+        }
     return render(request, 'my_erp/index.html', context)
 
 # Представление для страницы Каталог
-@group_required("Конструктор", "Гость")
-@login_required
 def catalog(request):
-    nbook = NomencBook.objects.only('id','type_of_reproduction', 'basic_unit', 'field_code', 'name').order_by('-id')
+    nbook = NomencBook.objects.only('id','type_of_reproduction', 'basic_unit', 'field_code', 'name', 'qnt').order_by('-id')
 
     # Подгружаем данные для выбора
     type_of_reproduction_choices = {
@@ -187,7 +185,7 @@ def clear_cache_on_update(sender, instance, **kwargs):
 
 # Представление для обновления таблицы, после изменения записи
 def update_table(request):
-    nbook = NomencBook.objects.only('id', 'type_of_reproduction', 'basic_unit', 'field_code', 'name').order_by('-id')
+    nbook = NomencBook.objects.only('id', 'type_of_reproduction', 'basic_unit', 'field_code', 'name', 'qnt').order_by('-id')
     page_number = request.GET.get('page', 1)
     paginator = Paginator(nbook, 20)
 
@@ -214,6 +212,7 @@ def update_table(request):
             'name': product.name,
             'type_of_reproduction': type_of_reproduction_choices.get(product.type_of_reproduction, ''),
             'basic_unit': basic_unit_choices.get(product.basic_unit, ''),
+            'qnt': product.qnt,
             'url': reverse('catalog:editCatalog', args=[product.id]),
         }
         for product in page_obj

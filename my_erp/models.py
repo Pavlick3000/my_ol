@@ -34,6 +34,7 @@ class NomencBook(models.Model):
     field_code = models.CharField(db_column='_Code', max_length=11, db_collation='Cyrillic_General_CI_AS', editable=False)  # Поле содержащее "Код"
     field_folder = models.BinaryField(db_column='_Folder', default=b'\x01', editable=False)  # TODO тут будет реализовать выбор - создаем "папку/она же группа" или нет
     field_marked = models.BinaryField(db_column='_Marked', default=b'\x00', editable=False)  # Маркер "На удаление"
+    qnt = models.DecimalField(db_column="Qnt", max_digits=15, decimal_places=3, null=True, blank=True) # Поле с количеством, которое вычисляется в таблице Stocks внутри БД
 
     # ____ Поля для пользователя ____
         # Не зависят от field_folder
@@ -118,6 +119,10 @@ class NomencBook(models.Model):
         db_table = '_Reference175'
         verbose_name = 'Номенклатура'  # Имя модели в админке
         verbose_name_plural = 'Номенклатура'  # Множественное число в админке
+
+    def get_qnt(self):
+        """Возвращает 0, если qnt равно None"""
+        return self.qnt if self.qnt is not None else 0
 
     @property
     def type_of_reproduction_display(self):

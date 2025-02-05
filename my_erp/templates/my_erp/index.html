@@ -3,11 +3,20 @@
 {% block content %}
     <main class="flex-grow p-1">
         <div class="page-header text-2xl text-black px-8 mt-4">
-            <h1><a href="{% url 'catalog:index' %}" class="hover:text-blue-600 transition-colors duration-300">Каталог - Номенклатура</a></h1>
+            {% if can_view_catalog %}
+                <h1>
+                    <a id="toCatalog" href="{% url 'catalog:index' %}" class="hover:text-blue-600 transition-colors duration-300">
+                        Каталог - Номенклатура
+                    </a>
+                    
+                </h1>
+            {% endif %}
         </div>
 
         <div>
             <h1 class="text-2xl text-black px-8 mt-4">Проверка</h1>
         </div>
     </main>
+    
+    
 {% endblock %}
