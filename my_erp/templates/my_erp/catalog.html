@@ -93,12 +93,13 @@
 
             <!-- Поле ввода для поиска -->
             <div class="my-4">
-                <label for="searchInput" class="block text-sm font-medium text-gray-700">Поиск по наименованию:</label>
+{#                <label for="searchInput" class="block text-sm font-medium text-gray-700">Поиск по наименованию:</label>#}
                 <input
                         id="searchInput"
                         type="text"
                         class="mt-1 block w-full p-2 border rounded"
-                        placeholder="Введите наименование для поиска..."
+                        placeholder="Введите наименование, код или id записи для поиска..."
+                        value="{{ search_query }}"
                         onkeyup="filterTableByName()">
             </div>
 
@@ -121,7 +122,7 @@
                         data-name="{{ product.name }}"
                         data-type-of-reproduction="{{ type_of_reproduction_choices|dict_get:product.type_of_reproduction }}"
                         data-basic-unit="{{ basic_unit_choices|dict_get:product.basic_unit }}"
-                        data-qnt="{{ product.qnt|default:0|floatformat:-3 }}"
+                        data-qnt="{{ product.qnt|format_qnt  }}"
                         data-url="{% url 'catalog:editCatalog' id=product.id %}"
                         onclick="toggleEditModal(this)">
 
@@ -130,7 +131,7 @@
                         <td class="font-medium">{{ product.name }}</td>
                         <td class="text-center">{{ type_of_reproduction_choices|dict_get:product.type_of_reproduction }}</td>
                         <td class="text-center">{{ basic_unit_choices|dict_get:product.basic_unit }}</td>
-                        <td class="text-center">{{ product.qnt|default:0|floatformat:-3 }}</td>
+                        <td class="text-center">{{ product.qnt|format_qnt  }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -138,38 +139,48 @@
         </div>
 
         <!-- Пагинация -->
-        <div class="pagination flex justify-center mt-4">
-            <ul class="flex space-x-2">
+        {% if page_obj.paginator.num_pages > 1 %}
+            <!-- Пагинация -->
+            <div class="pagination flex justify-center mt-4">
+                <ul class="flex space-x-2">
 
-                <!-- Ссылка "Назад" -->
-                {% if page_obj.has_previous %}
-                    <li>
-                        <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">Назад</a>
-                    </li>
-                {% endif %}
-
-                <!-- Номера страниц -->
-                {% for num in page_obj.paginator.page_range %}
-                    {% if num == page_obj.number %}
+                    {% if page_obj.has_previous %}
                         <li>
-                            <span class="px-4 py-2 bg-gray-300 text-gray-700 rounded">{{ num }}</span>
-                        </li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                        <li>
-                            <a href="?page={{ num }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">{{ num }}</a>
+                            <a href="?search={{ search_query }}&page={{ page_obj.previous_page_number }}"
+                               class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">
+                                Назад
+                            </a>
                         </li>
                     {% endif %}
-                {% endfor %}
 
-                <!-- Ссылка "Вперед" -->
-                {% if page_obj.has_next %}
-                    <li>
-                        <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">Вперед</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </div>
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if num == page_obj.number %}
+                            <li>
+                                <span class="px-4 py-2 bg-gray-300 text-gray-700 rounded">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li>
+                                <a href="?search={{ search_query }}&page={{ num }}"
+                                   class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
 
+                    {% if page_obj.has_next %}
+                        <li>
+                            <a href="?search={{ search_query }}&page={{ page_obj.next_page_number }}"
+                               class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700">
+                                Вперед
+                            </a>
+                        </li>
+                    {% endif %}
+
+                </ul>
+            </div>
+        {% endif %}
+    
         <!-- Выпадающий список по ПКМ -->
         <div id="actionModal" class="fixed inset-0 hidden">
             <div class="bg-white rounded-lg shadow-lg p-4 max-w-fit" style="position: absolute;">

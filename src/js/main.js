@@ -314,16 +314,27 @@ function confirmDeletion() {
 
 // Поле поиск
 function filterTableByName() {
-    const input = document.getElementById('searchInput');
-    const filter = input.value.toLowerCase();
-    const table = document.getElementById('productTable');
-    const rows = table.getElementsByTagName('tr');
+        let searchInput = document.getElementById("searchInput").value.trim();
 
-    for (let i = 1; i < rows.length; i++) {
-        const cell = rows[i].getElementsByTagName('td')[2]; // Индекс 2 — это колонка "Наименование"
-        if (cell) {
-            const textValue = cell.textContent || cell.innerText;
-            rows[i].style.display = textValue.toLowerCase().includes(filter) ? '' : 'none';
-        }
+        fetch(`/catalog/?search=${encodeURIComponent(searchInput)}`)
+            .then(response => response.text())
+            .then(html => {
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(html, 'text/html');
+
+                // Обновляем таблицу
+                let newTableBody = doc.querySelector("#productTable tbody");
+                document.querySelector("#productTable tbody").innerHTML = newTableBody.innerHTML;
+
+                // Обновляем пагинацию
+                let newPagination = doc.querySelector(".pagination");
+                let paginationContainer = document.querySelector(".pagination");
+                if (newPagination) {
+                    paginationContainer.innerHTML = newPagination.innerHTML;
+                } else {
+                    paginationContainer.innerHTML = "";
+                }
+            })
+            .catch(error => console.error('Ошибка поиска:', error));
     }
-}
+

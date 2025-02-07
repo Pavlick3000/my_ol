@@ -1,3 +1,7 @@
+function formatQnt(qnt) {
+    return qnt == null ? '0' : parseFloat(qnt).toFixed(3).replace(/\.?0+$/, '');
+}
+
 // Функция перерисовки таблицы после обновления данных
 function renderTable(data) {
     console.log(data);
@@ -17,7 +21,10 @@ function renderTable(data) {
         row.onclick = () => toggleEditModal(row);
 
         // Заменяем значение qnt на 0, если оно null или undefined
-        const qnt = product.qnt == null ? 0 : product.qnt;
+        // const qnt = product.qnt == null ? 0 : product.qnt;
+
+        // Форматируем количество qnt
+        const qntFormatted = formatQnt(product.qnt);
 
         row.innerHTML = `
             <td class="font-light">${product.id}</td>
@@ -25,7 +32,8 @@ function renderTable(data) {
             <td class="font-medium">${product.name}</td>
             <td class="text-center">${product.type_of_reproduction}</td>
             <td class="text-center">${product.basic_unit}</td>
-            <td class="text-center">${qnt}</td> <!-- Используем qnt, замененный на 0, если оно null или undefined -->
+            
+            <td class="text-center">${qntFormatted}</td> <!-- Используем qnt, замененный на 0, если оно null или undefined -->
         `;
         tbody.appendChild(row);
     });
@@ -36,20 +44,26 @@ async function updateTable(recordId = null) {
     // Генерация уникального параметра для предотвращения кеширования
     const timestamp = new Date().getTime();
     const url = recordId
-        ? `/catalog/update_table/?id=${recordId}&_=${timestamp}`
-        : `/catalog/update_table/?_=${timestamp}`;
+        ? `/catalog/?id=${recordId}&_=${timestamp}`
+        : `/catalog/?_=${timestamp}`;
 
-    const response = await fetch(url, { cache: "no-store" });
+    try {
+        const response = await fetch(url, {
+            cache: "no-store",
+            headers: { "X-Requested-With": "XMLHttpRequest" }, // Указываем, что это AJAX-запрос
+        });
 
-    if (!response.ok) {
-        console.error('Error fetching data:', response.statusText);
-        return;
+        if (!response.ok) {
+            throw new Error(`Ошибка загрузки данных: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("Received full response:", data);
+        console.log("Received data:", data.data);
+        renderTable(data.data);
+    } catch (error) {
+        console.error(error);
     }
-
-    const data = await response.json();
-    console.log("Received full response:", data);
-    console.log("Received data:", data.data);
-    renderTable(data.data);
 }
 
 // Функция для получения CSRF-токена

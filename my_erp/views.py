@@ -2,6 +2,7 @@ import binascii
 from functools import wraps
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.core.cache import cache
@@ -40,11 +41,21 @@ def index(request):
         }
     return render(request, 'my_erp/index.html', context)
 
-# Представление для страницы Каталог
+# Представление для страницы Каталог, включая обновление при внесении изменений в таблицу
 def catalog(request):
-    nbook = NomencBook.objects.only('id','type_of_reproduction', 'basic_unit', 'field_code', 'name', 'qnt').order_by('-id')
+    search_query = request.GET.get('search', '')
+    nbook = NomencBook.objects.only('id', 'type_of_reproduction', 'basic_unit', 'field_code', 'name', 'qnt')
 
-    # Подгружаем данные для выбора
+    if search_query:
+        nbook = nbook.filter(
+            Q(field_code__icontains=search_query) |
+            Q(name__icontains=search_query) |
+            Q(id__icontains=search_query)
+        )
+
+    nbook = nbook.order_by('-id')
+
+    # Загружаем справочники
     type_of_reproduction_choices = {
         prod.reproduction: prod.name
         for prod in ProductionTypeBook.objects.filter(reproduction__isnull=False)
@@ -54,24 +65,38 @@ def catalog(request):
         for unit in BasicUnitBook.objects.all()
     }
 
+    # Пагинация
     page_number = request.GET.get('page', 1)
     paginator = Paginator(nbook, 20)
+    page_obj = paginator.get_page(page_number)
 
-    try:
-        page_obj = paginator.get_page(page_number)
-    except PageNotAnInteger:
-        page_obj = paginator.get_page(1)
-    except EmptyPage:
-        page_obj = paginator.get_page(paginator.num_pages)
+    # Проверяем, является ли запрос AJAX-запросом
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        data = [
+            {
+                'id': product.id,
+                'field_code': product.field_code,
+                'name': product.name,
+                'type_of_reproduction': type_of_reproduction_choices.get(product.type_of_reproduction, ''),
+                'basic_unit': basic_unit_choices.get(product.basic_unit, ''),
+                'qnt': product.qnt,
+                'url': reverse('catalog:editCatalog', args=[product.id]),
+            }
+            for product in page_obj
+        ]
+        response_data = {'data': data, 'has_next': page_obj.has_next(), 'has_previous': page_obj.has_previous()}
+        return JsonResponse(response_data, safe=False)
 
+    # Если запрос не AJAX, рендерим HTML-страницу
     context = {
         'page_obj': page_obj,
         'title': 'ERP - catalog',
         'type_of_reproduction_choices': type_of_reproduction_choices,
         'basic_unit_choices': basic_unit_choices,
-        # 'form': form,
+        'search_query': search_query,
+        'is_paginated': paginator.num_pages > 1,
         'form': None,
-        }
+    }
     return render(request, 'my_erp/catalog.html', context)
 
 # Представление для формы "Новая запись"
@@ -183,39 +208,4 @@ def clear_cache_on_update(sender, instance, **kwargs):
     # Очистка всего кэша или конкретной страницы
     cache.clear()
 
-# Представление для обновления таблицы, после изменения записи
-def update_table(request):
-    nbook = NomencBook.objects.only('id', 'type_of_reproduction', 'basic_unit', 'field_code', 'name', 'qnt').order_by('-id')
-    page_number = request.GET.get('page', 1)
-    paginator = Paginator(nbook, 20)
 
-    try:
-        page_obj = paginator.get_page(page_number)
-    except PageNotAnInteger:
-        page_obj = paginator.get_page(1)
-    except EmptyPage:
-        page_obj = paginator.get_page(paginator.num_pages)
-
-    type_of_reproduction_choices = {
-        prod.reproduction: prod.name
-        for prod in ProductionTypeBook.objects.filter(reproduction__isnull=False)
-    }
-    basic_unit_choices = {
-        unit.db_id: unit.name
-        for unit in BasicUnitBook.objects.all()
-    }
-
-    data = [
-        {
-            'id': product.id,
-            'field_code': product.field_code,
-            'name': product.name,
-            'type_of_reproduction': type_of_reproduction_choices.get(product.type_of_reproduction, ''),
-            'basic_unit': basic_unit_choices.get(product.basic_unit, ''),
-            'qnt': product.qnt,
-            'url': reverse('catalog:editCatalog', args=[product.id]),
-        }
-        for product in page_obj
-    ]
-    response_data = {'data': data, 'has_next': page_obj.has_next(), 'has_previous': page_obj.has_previous()}
-    return JsonResponse(response_data, safe=False)
