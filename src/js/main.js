@@ -87,7 +87,6 @@ document.getElementById("editForm").addEventListener("submit", async function (e
     const actionUrl = form.action;
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-
     try {
         const response = await fetch(actionUrl, {
             method: 'POST',
@@ -98,17 +97,21 @@ document.getElementById("editForm").addEventListener("submit", async function (e
         });
 
         if (response.ok) {
-            toggleEditModal(); // Закрываем модальное окно
-            updateTable();
+            const responseData = await response.json();
+            if (responseData.status === "success") {
+                toggleEditModal(); // Закрываем модальное окно
+
+                // Обновляем строку таблицы
+                updateTableRow(responseData.data);
+            }
         } else if (response.status === 403) {
-            const errorHtml = await response.text(); // Предполагаем, что сервер возвращает HTML модального окна
+            const errorHtml = await response.text();
             showModal(errorHtml); // Отображаем модальное окно
         } else {
             const errorData = await response.json();
             alert("Ошибка при обновлении записи: " + JSON.stringify(errorData));
         }
-    }
-    catch (error) {
+    } catch (error) {
         console.error("Ошибка отправки формы:", error);
         alert("Произошла ошибка при отправке формы.");
     }
@@ -315,6 +318,8 @@ function confirmDeletion() {
 // Поле поиск
 function filterTableByName() {
         let searchInput = document.getElementById("searchInput").value.trim();
+        // localStorage.setItem("searchQuery", searchInput); // Сохраняем поисковый запрос
+        // console.log("Сохраненный поисковый запрос:", searchInput);
 
         fetch(`/catalog/?search=${encodeURIComponent(searchInput)}`)
             .then(response => response.text())
@@ -337,4 +342,5 @@ function filterTableByName() {
             })
             .catch(error => console.error('Ошибка поиска:', error));
     }
+
 

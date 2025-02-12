@@ -84,7 +84,13 @@ def catalog(request):
             }
             for product in page_obj
         ]
-        response_data = {'data': data, 'has_next': page_obj.has_next(), 'has_previous': page_obj.has_previous()}
+        response_data = {
+            'data': data,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+            # 'num_pages': paginator.num_pages,  # Добавляем количество страниц
+            # 'current_page': page_obj.number  # Добавляем текущую страницу
+        }
         return JsonResponse(response_data, safe=False)
 
     # Если запрос не AJAX, рендерим HTML-страницу
@@ -147,16 +153,35 @@ def editCatalog(request, id):
     product = get_object_or_404(NomencBook, id=id)
     form = NomencBookForm(request.POST or None, instance=product)
 
+    # Загружаем справочники
+    type_of_reproduction_choices = {
+        prod.reproduction: prod.name
+        for prod in ProductionTypeBook.objects.filter(reproduction__isnull=False)
+    }
+    basic_unit_choices = {
+        unit.db_id: unit.name
+        for unit in BasicUnitBook.objects.all()
+    }
+
     if form.is_valid():
         try:
-            # Сохраняем объект через форму
-            form.save()
-            # request.session.modified = True
-            return JsonResponse({"status": "success", "message": "Запись успешно обновлена."})
+            product = form.save()  # Сохраняем объект через форму
+
+            # Подготовка данных для обновления таблицы
+            updated_product_data = {
+                "id": product.id,
+                "field_code": product.field_code,
+                "name": product.name,
+                'type_of_reproduction': type_of_reproduction_choices.get(product.type_of_reproduction, ''),
+                'basic_unit': basic_unit_choices.get(product.basic_unit, ''),
+                "qnt": product.qnt,
+            }
+
+            return JsonResponse({"status": "success", "message": "Запись успешно обновлена.", "data": updated_product_data})
         except (binascii.Error, ValueError) as e:
             return JsonResponse({"status": "error", "message": f"Ошибка декодирования данных: {str(e)}"}, status=400)
     else:
-        return JsonResponse({"status": "error", "errors": form.errors}, status=400) # Значение с котором всё работало
+        return JsonResponse({"status": "error", "errors": form.errors}, status=400)
 
 # Представление для "Удалить запись"
 @group_required("Конструктор")
@@ -207,5 +232,7 @@ def getSelectOptions(request):
 def clear_cache_on_update(sender, instance, **kwargs):
     # Очистка всего кэша или конкретной страницы
     cache.clear()
+
+
 
 

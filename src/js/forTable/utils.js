@@ -1,69 +1,18 @@
 function formatQnt(qnt) {
-    return qnt == null ? '0' : parseFloat(qnt).toFixed(3).replace(/\.?0+$/, '');
-}
-
-// Функция перерисовки таблицы после обновления данных
-function renderTable(data) {
-    console.log(data);
-    const tbody = document.querySelector('#productTable tbody');
-    tbody.innerHTML = ''; // Очищаем текущие строки
-
-    data.forEach(product => {
-        const row = document.createElement('tr');
-        row.className = 'cursor-pointer hover:text-red-400';
-        row.dataset.id = product.id;
-        row.dataset.fieldCode = product.field_code;
-        row.dataset.name = product.name;
-        row.dataset.typeOfReproduction = product.type_of_reproduction;
-        row.dataset.basicUnit = product.basic_unit;
-        row.dataset.qnt = product.qnt;
-        row.dataset.url = product.url;
-        row.onclick = () => toggleEditModal(row);
-
-        // Заменяем значение qnt на 0, если оно null или undefined
-        // const qnt = product.qnt == null ? 0 : product.qnt;
-
-        // Форматируем количество qnt
-        const qntFormatted = formatQnt(product.qnt);
-
-        row.innerHTML = `
-            <td class="font-light">${product.id}</td>
-            <td>${product.field_code}</td>
-            <td class="font-medium">${product.name}</td>
-            <td class="text-center">${product.type_of_reproduction}</td>
-            <td class="text-center">${product.basic_unit}</td>
-            
-            <td class="text-center">${qntFormatted}</td> <!-- Используем qnt, замененный на 0, если оно null или undefined -->
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-// Функция обновления данных таблицы
-async function updateTable(recordId = null) {
-    // Генерация уникального параметра для предотвращения кеширования
-    const timestamp = new Date().getTime();
-    const url = recordId
-        ? `/catalog/?id=${recordId}&_=${timestamp}`
-        : `/catalog/?_=${timestamp}`;
-
-    try {
-        const response = await fetch(url, {
-            cache: "no-store",
-            headers: { "X-Requested-With": "XMLHttpRequest" }, // Указываем, что это AJAX-запрос
-        });
-
-        if (!response.ok) {
-            throw new Error(`Ошибка загрузки данных: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log("Received full response:", data);
-        console.log("Received data:", data.data);
-        renderTable(data.data);
-    } catch (error) {
-        console.error(error);
+    if (qnt == null) {
+        return '0';
     }
+    // Округляем до 3 знаков после запятой и удаляем лишние нули
+    let formattedQnt = parseFloat(qnt).toFixed(3).replace(/\.?0+$/, '');
+
+    // Разделяем целую часть и дробную часть (если есть)
+    let [integerPart, decimalPart] = formattedQnt.split('.');
+
+    // Форматируем целую часть с разделением на тысячи
+    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+    // Если есть дробная часть, добавляем её обратно
+    return decimalPart ? `${integerPart}.${decimalPart}` : integerPart;
 }
 
 // Функция для получения CSRF-токена
@@ -81,4 +30,39 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+function clearInput() {
+        document.getElementById("searchInput").value = "";
+        filterTableByName();  // Запускаем фильтрацию с пустым значением
+    }
+
+// Функция обновления данных таблицы
+function updateTableRow(updatedProduct) {
+    // Найти строку по data-id
+    const row = document.querySelector(`tr[data-id="${updatedProduct.id}"]`);
+
+    if (row) {
+        // Форматируем значение qnt
+        const formattedQnt = formatQnt(updatedProduct.qnt);
+
+        // Обновляем текст в ячейках таблицы
+        row.querySelector('td:nth-child(2)').textContent = updatedProduct.field_code;
+        row.querySelector('td:nth-child(3)').textContent = updatedProduct.name;
+        row.querySelector('td:nth-child(4)').textContent = updatedProduct.type_of_reproduction;
+        row.querySelector('td:nth-child(5)').textContent = updatedProduct.basic_unit;
+        row.querySelector('td:nth-child(6)').textContent = formattedQnt;
+
+        // Обновляем атрибуты data-* в строке таблицы
+        row.setAttribute('data-field-code', updatedProduct.field_code);
+        row.setAttribute('data-name', updatedProduct.name);
+        row.setAttribute('data-type-of-reproduction', updatedProduct.type_of_reproduction);
+        row.setAttribute('data-basic-unit', updatedProduct.basic_unit);
+        row.setAttribute('data-qnt', updatedProduct.qnt);
+
+    }
+}
+
+
+
+
 
