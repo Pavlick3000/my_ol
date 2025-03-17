@@ -29,7 +29,7 @@ class ProductionTypeBook(models.Model):
 
 class NomencBook(models.Model):
 
-    # ____ Служебные поля ____
+    # ____ Служебные поля ___
     db_id = models.BinaryField(db_column='_IDRRef', editable=False)
     field_code = models.CharField(db_column='_Code', max_length=11, db_collation='Cyrillic_General_CI_AS', editable=False)  # Поле содержащее "Код"
     field_folder = models.BinaryField(db_column='_Folder', default=b'\x01', editable=False)  # TODO тут будет реализовать выбор - создаем "папку/она же группа" или нет

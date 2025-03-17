@@ -139,7 +139,7 @@ document.getElementById("newRecordForm").addEventListener("submit", async functi
             const responseData = await response.json();
             if (responseData.status === "success") {
                 toggleNewRecModal(); // Закрываем модальное окно
-                updateTable(); // Обновляем таблицу
+                refreshTable();
             } else {
                 alert("Ошибка: " + responseData.message); // Обрабатываем сообщение об ошибке
             }
@@ -228,7 +228,7 @@ async function fetchSelectOptions() {
     }
 }
 
-// Сортировка по нажатию на имя столбца
+// Сортировка по нажатию на имя столбца_
 function sortTable(columnIndex) {
     const table = document.getElementById("productTable");
     let switching = true;
@@ -300,7 +300,7 @@ function confirmDeletion() {
             if (response.ok) {
                 // alert("Запись успешно удалена!");
                 toggleEditModal();
-                updateTable(); // Обновляем таблицу
+                refreshTable(); // Обновляем таблицу
             } else if (response.status === 403) {
                 const errorHtml = await response.text(); // Предполагаем, что сервер возвращает HTML модального окна
                 showModal(errorHtml); // Отображаем модальное окно
@@ -316,31 +316,38 @@ function confirmDeletion() {
 }
 
 // Поле поиск
+function filterTable(searchInputId, fetchUrl, tableId) {
+    let searchInput = document.getElementById(searchInputId).value.trim();
+
+    fetch(`${fetchUrl}?search=${encodeURIComponent(searchInput)}`)
+        .then(response => response.text())
+        .then(html => {
+            let parser = new DOMParser();
+            let doc = parser.parseFromString(html, 'text/html');
+
+            // Обновляем таблицу
+            let newTableBody = doc.querySelector(`#${tableId} tbody`);
+            document.querySelector(`#${tableId} tbody`).innerHTML = newTableBody.innerHTML;
+
+            // Обновляем пагинацию
+            let newPagination = doc.querySelector(".pagination");
+            let paginationContainer = document.querySelector(".pagination");
+            if (newPagination) {
+                paginationContainer.innerHTML = newPagination.innerHTML;
+            } else {
+                paginationContainer.innerHTML = "";
+            }
+        })
+        .catch(error => console.error('Ошибка поиска:', error));
+}
+
+// Использование функции для каталога: переменные для поля поиск
 function filterTableByName() {
-        let searchInput = document.getElementById("searchInput").value.trim();
-        // localStorage.setItem("searchQuery", searchInput); // Сохраняем поисковый запрос
-        // console.log("Сохраненный поисковый запрос:", searchInput);
+    filterTable("searchInput", "/catalog/", "productTable");
+}
 
-        fetch(`/catalog/?search=${encodeURIComponent(searchInput)}`)
-            .then(response => response.text())
-            .then(html => {
-                let parser = new DOMParser();
-                let doc = parser.parseFromString(html, 'text/html');
-
-                // Обновляем таблицу
-                let newTableBody = doc.querySelector("#productTable tbody");
-                document.querySelector("#productTable tbody").innerHTML = newTableBody.innerHTML;
-
-                // Обновляем пагинацию
-                let newPagination = doc.querySelector(".pagination");
-                let paginationContainer = document.querySelector(".pagination");
-                if (newPagination) {
-                    paginationContainer.innerHTML = newPagination.innerHTML;
-                } else {
-                    paginationContainer.innerHTML = "";
-                }
-            })
-            .catch(error => console.error('Ошибка поиска:', error));
-    }
-
+// Использование функции для заказов: переменные для поля поиск
+function filterTableByNameOrders() {
+    filterTable("searchInputOrders", "/orders/", "ordersTable");
+}
 

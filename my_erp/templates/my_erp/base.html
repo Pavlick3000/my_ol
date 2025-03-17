@@ -1,5 +1,6 @@
 {% load static %}
 {% include 'users/login.html' %}
+{#{% include 'orders/orders.html' %}#}
 
 
 <!DOCTYPE html>
@@ -18,13 +19,10 @@
             <div class="flex items-center justify-between h-full px-8">
                 <!-- Логотип -->
                 <h1 class="text-2xl font-bold">
-                    <a href="{% url 'index' %}" class="text-gray-800 hover:text-blue-600 transition-colors duration-300">
+                    <a href="{% url 'index' %}" class="text-amber-600 hover:text-blue-600 transition-colors duration-300">
                         ERP-Hermes logo
                     </a>
                 </h1>
-                <button class="my-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700" onclick="updateTable()">
-                    Обновить таблицу
-                </button>
                 <!-- Кнопка "Выход" -->
                 <form action="{% url 'users:logout' %}" method="post">
                     {% csrf_token %}
@@ -59,7 +57,7 @@
         
         <!-- Подвал -->
         <footer class="bg-gray-500 text-white py-1.5 text-center">
-            <p>© 2024 ERP-Hermes.</p>
+            <p>© 2025 ERP-Hermes.</p>
             Иконки от <a target="_blank" href="https://icons8.com">Icons8</a>
         </footer>
         

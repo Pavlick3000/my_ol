@@ -33,11 +33,13 @@ def group_required(*group_name):
 def index(request):
     user_groups = request.user.groups.values_list('name', flat=True)
     can_view_catalog = "Гость" in user_groups or "Конструктор" in user_groups
+    can_view_orders = "Гость" in user_groups or "Конструктор" in user_groups
 
     context = {
         'title': 'ERP - main',
         'is_promotion': False,
         'can_view_catalog': can_view_catalog,
+        'can_view_orders': can_view_orders,
         }
     return render(request, 'my_erp/index.html', context)
 
@@ -96,7 +98,7 @@ def catalog(request):
     # Если запрос не AJAX, рендерим HTML-страницу
     context = {
         'page_obj': page_obj,
-        'title': 'ERP - catalog',
+        'title': 'ERP - номенклатура',
         'type_of_reproduction_choices': type_of_reproduction_choices,
         'basic_unit_choices': basic_unit_choices,
         'search_query': search_query,
@@ -111,33 +113,15 @@ def catalog(request):
 def newRecord(request):
     post_data = request.POST.copy()
 
-    # Преобразуем значение basic_unit в hex (если оно есть)
-    if 'basic_unit' in post_data:
-        try:
-            # Преобразуем значение basic_unit в bytes и затем в hex
-            basic_unit_bytes = bytes.fromhex(post_data['basic_unit'])
-            post_data['basic_unit'] = basic_unit_bytes.hex().upper()
-        except ValueError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid basic_unit value'}, status=400)
-
-    # Преобразуем значение type_of_reproduction в hex (если оно есть)
-    if 'type_of_reproduction' in post_data:
-        try:
-            # Преобразуем значение type_of_reproduction в bytes и затем в hex
-            type_of_reproduction_bytes = bytes.fromhex(post_data['type_of_reproduction'])
-            post_data['type_of_reproduction'] = type_of_reproduction_bytes.hex().upper()
-        except ValueError:
-            return JsonResponse({'status': 'error', 'message': 'Invalid type_of_reproduction value'}, status=400)
-
     # Инициализация формы с преобразованными данными
     form = NomencBookForm(data=post_data)
 
     # Проверяем корректность данных формы
     if form.is_valid():
         try:
-            # Сохраняем объект через форму
             form.save()
             return JsonResponse({"status": "success", "message": "Запись успешно добавлена."})
+
         except (binascii.Error, ValueError) as e:
             return JsonResponse({"status": "error", "message": f"Ошибка декодирования данных: {str(e)}"},
                                 status=400)
@@ -232,6 +216,7 @@ def getSelectOptions(request):
 def clear_cache_on_update(sender, instance, **kwargs):
     # Очистка всего кэша или конкретной страницы
     cache.clear()
+
 
 
 

@@ -11,6 +11,15 @@
                     
                 </h1>
             {% endif %}
+            
+            {% if can_view_orders %}
+                <h1 class="mt-4">
+                    <a id="toOrders" href="{% url 'orders:orders' %}" class="hover:text-blue-600 transition-colors duration-300">
+                        Заказы покупателей
+                    </a>
+                    
+                </h1>
+            {% endif %}
         </div>
 
         <div>

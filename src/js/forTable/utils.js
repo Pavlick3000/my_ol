@@ -15,7 +15,7 @@ function formatQnt(qnt) {
     return decimalPart ? `${integerPart}.${decimalPart}` : integerPart;
 }
 
-// Функция для получения CSRF-токена
+// Функция для получения CSRF-токена_
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -31,12 +31,13 @@ function getCookie(name) {
     return cookieValue;
 }
 
-function clearInput() {
-        document.getElementById("searchInput").value = "";
-        filterTableByName();  // Запускаем фильтрацию с пустым значением
-    }
+// Функция для очистки поля поиска
+function clearInput(searchInputId, filterFunction) {
+    document.getElementById(searchInputId).value = ""; // Очищаем поле поиска
+    filterFunction(); // Вызываем переданную функцию фильтрации
+}
 
-// Функция обновления данных таблицы
+// Функция обновления данных таблицы при изменении записей
 function updateTableRow(updatedProduct) {
     // Найти строку по data-id
     const row = document.querySelector(`tr[data-id="${updatedProduct.id}"]`);
@@ -62,6 +63,61 @@ function updateTableRow(updatedProduct) {
     }
 }
 
+// Функция для обновления содержимого таблицы при добавлении новой записи.
+async function refreshTable() {
+    try {
+        const currentPage = new URLSearchParams(window.location.search).get("page") || 1;
+        const searchQuery = new URLSearchParams(window.location.search).get("search") || "";
+
+        // Генерация уникального параметра для предотвращения кеширования
+        const timestamp = new Date().getTime();
+        const url = `/catalog/?search=${encodeURIComponent(searchQuery)}&page=${currentPage}&_=${timestamp}`;
+
+        const response = await fetch(url, {
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
+
+        if (response.ok) {
+            const responseData = await response.json();
+            updateTable(responseData.data);
+        }
+    } catch (error) {
+        console.error("Ошибка обновления таблицы:", error);
+    }
+}
+
+// Функция для обновления строк в таблице при добавлении новой записи.
+function updateTable(data) {
+    const tableBody = document.querySelector("#productTable tbody");
+    tableBody.innerHTML = ""; // Очищаем старые данные
+
+    data.forEach((product) => {
+        const row = document.createElement("tr");
+        row.className = "cursor-pointer hover:text-red-400";
+        row.setAttribute("data-id", product.id);
+        row.setAttribute("data-field-code", product.field_code);
+        row.setAttribute("data-name", product.name);
+        row.setAttribute("data-type-of-reproduction", product.type_of_reproduction);
+        row.setAttribute("data-basic-unit", product.basic_unit);
+        row.setAttribute("data-qnt", product.qnt);
+        row.setAttribute("data-url", product.url);
+        row.setAttribute("onclick", "toggleEditModal(this)");
+
+        // Форматируем qnt с помощью formatQnt
+        const formattedQnt = formatQnt(product.qnt);
+
+        row.innerHTML = `
+            <td class="font-light">${product.id}</td>
+            <td>${product.field_code}</td>
+            <td class="font-medium">${product.name}</td>
+            <td class="text-center">${product.type_of_reproduction}</td>
+            <td class="text-center">${product.basic_unit}</td>
+            <td class="text-center">${formattedQnt}</td>
+        `;
+
+        tableBody.appendChild(row);
+    });
+}
 
 
 
