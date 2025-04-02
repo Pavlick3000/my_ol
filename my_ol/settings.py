@@ -64,7 +64,7 @@ MIDDLEWARE = [
 ]
 
 CACHE_MIDDLEWARE_ALIAS  = 'default' # cache alias
-CACHE_MIDDLEWARE_SECONDS = 10 # number of seconds each page should be cached.
+CACHE_MIDDLEWARE_SECONDS = 1 # number of seconds each page should be cached.
 CACHE_MIDDLEWARE_KEY_PREFIX = ''  # name of site if multiple sites are used
 
 # ENABLE_CACHE = False
