@@ -48,7 +48,13 @@
 
         <!-- Форма "Изменить запись" -->
         <div id="editmodal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
-            <div class="modal-content bg-white p-6 rounded-lg w-full max-w-md shadow-lg shadow-gray-700">
+            <div class="bg-white p-6 rounded-lg w-full max-w-md shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out overflow-hidden">
+                
+                <!-- Крестик для закрытия модального окна -->
+                <button id="close-editRec-modal" class="absolute top-2 right-2 p-2">
+                    <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
+                </button>
+                
                 <h2 class="text-xl font-bold mb-4">Редактировать товар</h2>
                 <form id="editForm" method="post">
                     {% csrf_token %}
@@ -80,7 +86,7 @@
                     <!-- Кнопки -->
                     <div class="flex justify-center space-x-2 mt-4">
                         <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Отправить</button>
-                        <button type="button" onclick="toggleEditModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded">Закрыть</button>
+{#                        <button type="button" onclick="toggleEditModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded">Закрыть</button>#}
                         <button type="button" onclick="confirmDeletion()" class="px-4 py-2 bg-red-400 text-white rounded">Удалить</button>
                     </div>
                 </form>
