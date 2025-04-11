@@ -3,7 +3,7 @@ from django.db import models
 
 
 class OrdersBook(models.Model):
-    db_id = models.TextField(db_column='_IDRRef', unique=True)
+    db_id = models.BinaryField(db_column='_IDRRef', unique=True)
     db_id_doc661 = models.TextField(db_column='_Fld7931_RRRef')
 
     date_of_formation = models.DateField(db_column='date_of_formation')
@@ -13,7 +13,6 @@ class OrdersBook(models.Model):
     payment = models.DecimalField(max_digits=15, decimal_places=2)
 
     number = models.CharField(db_column='_Number', max_length=11, db_collation='Cyrillic_General_CI_AS')
-    # buyer = models.TextField(db_column='_Fld7912RRef')
 
     buyer = models.ForeignKey(
         'BuyerBook',
@@ -53,17 +52,16 @@ class BuyerBook(models.Model):
         verbose_name = 'Контрагенты'  # Имя модели в админке
         verbose_name_plural = 'Контрагенты'  # Множественное число в админке
 
-        # Добавьте этот метод
     def __str__(self):
         return self.description or "Неизвестный покупатель"
 
 class RealizationBook(models.Model):
-    db_id = models.TextField(db_column='_IDRRef', unique=True)
+    db_id = models.BinaryField(db_column='_IDRRef', unique=True)
     number = models.CharField(db_column='_Number', max_length=11, db_collation='Cyrillic_General_CI_AS')
     date_of = models.DateTimeField(db_column='_Date_Time')
 
     realizations = models.ForeignKey(
-        OrdersBook,
+        'OrdersBook',
         to_field='db_id',
         db_column='_Fld17829_RRRef',
         on_delete=models.CASCADE,
@@ -75,3 +73,38 @@ class RealizationBook(models.Model):
         db_table = '_Document617'
         verbose_name = 'Реализации'  # Имя модели в админке
         verbose_name_plural = 'Реализации'  # Множественное число в админке
+
+class OrderList(models.Model):
+
+    order = models.ForeignKey( # Связь с OrdersBook (_Document400: Заказы покупателей)
+        'OrdersBook',
+        to_field='db_id',
+        db_column='_Document400_IDRRef',
+        on_delete=models.CASCADE,
+        related_name='order_items'
+    )
+
+    nomenclature = models.ForeignKey( # Связь с NomencBook (_Reference175: Номенклатура)
+        'my_erp.NomencBook',
+        to_field='db_id',
+        db_column='_Fld7944RRef',
+        on_delete=models.CASCADE,
+        related_name='order_lines'
+    )
+
+    line_number = models.DecimalField(db_column='_LineNo7938', max_digits=5, decimal_places=0)
+    quantity = models.DecimalField(db_column='_Fld7941', max_digits=15, decimal_places=3) # Кол-во
+
+    price = models.DecimalField(db_column='_Fld7955', max_digits=5, decimal_places=2) # Стоимость за 1 шт. без НДС
+    amount = models.DecimalField(db_column='_Fld7950', max_digits=15, decimal_places=2) # Сумма без НДС
+    amount_nalog = models.DecimalField(db_column='_Fld7953', max_digits=15, decimal_places=2) # размер НДС
+
+    @property
+    def sum_total(self): # Сумма с НДС
+        return (self.amount or 0) + (self.amount_nalog or 0)
+
+    class Meta:
+        managed = False
+        db_table = '_Document400_VT7937'
+        verbose_name = 'Состав заказа покупателя'  # Имя модели в админке
+        verbose_name_plural = 'Состав заказа покупателя'  # Множественное число в админке

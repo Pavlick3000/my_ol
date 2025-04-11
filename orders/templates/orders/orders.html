@@ -5,7 +5,7 @@
 {% block content %}
     <main class="flex-grow p-1">
         
-        <!-- Форма "Детали заказа покупателя" -->
+        <!-- Модальное окно "Детали заказа покупателя" -->
         <div id="ordermodal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
             <div class="bg-white p-6 rounded-lg w-max shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out overflow-hidden">
                 
@@ -28,6 +28,21 @@
                     <span id="order-total-display"  class="font-normal text-xl"></span>
                     <span class="font-normal text-sm">₽</span>
                 </h3>
+
+                <!-- Таблица позиций заказа -->
+                <table class="my-table mt-4 w-full">
+                    <thead>
+                    <tr>
+                        <th class="px-2 py-1">#</th>
+                        <th class="px-2 py-1">Наименование</th>
+                        <th class="px-2 py-1">Кол-во</th>
+                        <th class="px-2 py-1">Сумма</th>
+                    </tr>
+                    </thead>
+                    <tbody id="order-items-table">
+                    <!-- Данные о позициях будут вставляться сюда через JS -->
+                    </tbody>
+                </table>
                 
                 <form id="orderForm" method="post">
                     {% csrf_token %}

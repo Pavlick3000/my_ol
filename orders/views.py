@@ -1,12 +1,11 @@
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
-from .models import OrdersBook
+from .models import OrdersBook, OrderList
 from django.db.models import Q
 
 def orders(request):
     search_query = request.GET.get('search', '')
-    # ordersBook = OrdersBook.objects.only('id', 'number', 'cost', 'buyer')
     ordersBook = OrdersBook.objects.select_related(
         'buyer'  # Прямая связь с BuyerBook
     ).prefetch_related(
@@ -46,17 +45,29 @@ def orders(request):
         }
     return render(request, 'orders/orders.html', context)
 
-# def orderDetails(request, id):
-#
-#     return render(request, 'orders/orders.html')
-
 def orderDetails(request, id):
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # Это AJAX-запрос
-        order = get_object_or_404(OrdersBook, id=id)
-        data = {
-            'formatted_number': order.formatted_number,
-            # другие данные...
-        }
-        return JsonResponse(data)
-    return render(request, 'orders/orders.html')
+    # if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    #     # Это AJAX-запрос
+    #     order = get_object_or_404(OrdersBook, id=id)
+    #     data = {
+    #         'formatted_number': order.formatted_number,
+    #         # другие данные...
+    #     }
+    #     return JsonResponse(data)
+    # return render(request, 'orders/orders.html')
+    order_id = request.GET.get('order_id')
+    if order_id:
+        items = OrderList.objects.filter(order__id=order_id)
+        data = [
+            {
+                'nomenclature': item.nomenclature.name if item.nomenclature else '-',
+                'quantity': float(item.quantity),
+                'line_number': int(item.line_number),
+                'amount': float(item.amount),
+                'amount_nalog': float(item.amount_nalog),
+                'sum_total': float(item.sum_total)
+            }
+            for item in items
+        ]
+        return JsonResponse({'items': data})
+    return JsonResponse({'items': []})
