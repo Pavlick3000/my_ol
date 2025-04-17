@@ -45,29 +45,29 @@ def orders(request):
         }
     return render(request, 'orders/orders.html', context)
 
+
 def orderDetails(request, id):
-    # if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-    #     # Это AJAX-запрос
-    #     order = get_object_or_404(OrdersBook, id=id)
-    #     data = {
-    #         'formatted_number': order.formatted_number,
-    #         # другие данные...
-    #     }
-    #     return JsonResponse(data)
-    # return render(request, 'orders/orders.html')
-    order_id = request.GET.get('order_id')
-    if order_id:
-        items = OrderList.objects.filter(order__id=order_id)
-        data = [
-            {
-                'nomenclature': item.nomenclature.name if item.nomenclature else '-',
-                'quantity': float(item.quantity),
-                'line_number': int(item.line_number),
-                'amount': float(item.amount),
-                'amount_nalog': float(item.amount_nalog),
-                'sum_total': float(item.sum_total)
-            }
-            for item in items
-        ]
-        return JsonResponse({'items': data})
-    return JsonResponse({'items': []})
+
+    try:
+        order = OrdersBook.objects.get(pk=id)
+        order_items = order.order_items.select_related('nomenclature')
+
+        data = {
+            'number': order.formatted_number(),
+            'date_of_formation': order.date_of_formation.strftime('%d.%m.%Y'),
+            'buyer': order.buyer.description if order.buyer else 'неизвестен',
+            'total': float(order.cost),
+            'items': [
+                {
+                    'line_number': item.line_number,
+                    'name': item.nomenclature.name,
+                    'quantity': f'{item.quantity:.2f}',
+                    'total': f'{item.sum_total:.2f}',
+                }
+                for item in order_items
+            ]
+        }
+
+        return JsonResponse(data)
+    except OrdersBook.DoesNotExist:
+        return JsonResponse({'error': 'Order not found'}, status=404)

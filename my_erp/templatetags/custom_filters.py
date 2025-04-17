@@ -25,6 +25,6 @@ def format_qnt(value):
         integer_part = re.sub(r"(?<=\d)(?=(\d{3})+(\.|\b))", r" ", integer_part)
 
         # Если дробная часть существует, добавляем её обратно
-        return f"{integer_part}{'.' + decimal_part[0] if decimal_part else ''}"
+        return f"{integer_part}{',' + decimal_part[0] if decimal_part else ''}"
     except (ValueError, TypeError):
         return "0"

@@ -4,7 +4,12 @@
 
 {% block content %}
     <main class="flex-grow p-1">
-        
+
+        <!-- Лоадер -->
+        <div id="loading-spinner" class="absolute inset-0 bg-gray-700 bg-opacity-50 flex justify-center items-center z-50 hidden">
+            <div class="loader border-4 border-t-transparent border-blue-500 rounded-full w-16 h-16 animate-spin"></div>
+        </div>
+    
         <!-- Модальное окно "Детали заказа покупателя" -->
         <div id="ordermodal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
             <div class="bg-white p-6 rounded-lg w-max shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out overflow-hidden">
@@ -35,12 +40,13 @@
                     <tr>
                         <th class="px-2 py-1">#</th>
                         <th class="px-2 py-1">Наименование</th>
-                        <th class="px-2 py-1">Кол-во</th>
-                        <th class="px-2 py-1">Сумма</th>
+                        <th class="px-2 py-1 text-right">Кол-во</th>
+                        <th class="px-2 py-1 text-right">Сумма</th>
                     </tr>
                     </thead>
+                    
                     <tbody id="order-items-table">
-                    <!-- Данные о позициях будут вставляться сюда через JS -->
+                    <!-- Заполнится через JS -->
                     </tbody>
                 </table>
                 
@@ -91,8 +97,6 @@
                 {% for product in page_obj %}
                     <tr class="cursor-pointer hover:text-red-400"
                         data-id="{{ product.id }}"
-{#                        data-url="{% url 'orders:orderDetails' id=product.id %}"#}
-                        data-url="{% url 'orders:orderDetails' %}"
                         onclick="toggleOrderModal(this)">
                     
                         <td class="font-light">{{ product.id }}</td>

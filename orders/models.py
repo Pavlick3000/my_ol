@@ -1,6 +1,4 @@
-
 from django.db import models
-
 
 class OrdersBook(models.Model):
     db_id = models.BinaryField(db_column='_IDRRef', unique=True)
@@ -40,7 +38,7 @@ class OrdersBook(models.Model):
         return f'{number}'
 
 class BuyerBook(models.Model):
-    db_id = models.TextField(db_column='_IDRRef', unique=True)
+    db_id = models.BinaryField(db_column='_IDRRef', unique=True)
     description = models.CharField(db_column='_Description', max_length=100, db_collation='Cyrillic_General_CI_AS')
     inn_code = models.CharField(db_column='_Fld2682', max_length=12, db_collation='Cyrillic_General_CI_AS', blank=True, null=True)
     full_name = models.TextField(db_column='_Fld2676', db_collation='Cyrillic_General_CI_AS', blank=True, null=True)
