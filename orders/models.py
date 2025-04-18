@@ -1,4 +1,6 @@
+
 from django.db import models
+
 
 class OrdersBook(models.Model):
     db_id = models.BinaryField(db_column='_IDRRef', unique=True)

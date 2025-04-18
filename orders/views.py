@@ -52,6 +52,8 @@ def orderDetails(request, id):
         order = OrdersBook.objects.get(pk=id)
         order_items = order.order_items.select_related('nomenclature')
 
+        order_items = order_items.order_by('line_number')
+
         data = {
             'number': order.formatted_number(),
             'date_of_formation': order.date_of_formation.strftime('%d.%m.%Y'),
@@ -61,8 +63,10 @@ def orderDetails(request, id):
                 {
                     'line_number': item.line_number,
                     'name': item.nomenclature.name,
-                    'quantity': f'{item.quantity:.2f}',
-                    'total': f'{item.sum_total:.2f}',
+                    'price': item.price,
+                    'amount': item.amount,
+                    'quantity': item.quantity,
+                    'total': item.sum_total,
                 }
                 for item in order_items
             ]

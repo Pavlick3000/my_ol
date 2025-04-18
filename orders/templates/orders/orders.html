@@ -9,46 +9,51 @@
         <div id="loading-spinner" class="absolute inset-0 bg-gray-700 bg-opacity-50 flex justify-center items-center z-50 hidden">
             <div class="loader border-4 border-t-transparent border-blue-500 rounded-full w-16 h-16 animate-spin"></div>
         </div>
-    
+
         <!-- Модальное окно "Детали заказа покупателя" -->
         <div id="ordermodal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
-            <div class="bg-white p-6 rounded-lg w-max shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out overflow-hidden">
-                
+            <div class="bg-white p-6 rounded-lg w-max shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out">
                 <!-- Крестик для закрытия модального окна -->
                 <button id="close-orders-modal" class="absolute top-2 right-2 p-2">
                     <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
                 </button>
-                
+
                 <!-- Заголовок -->
-                <h2 class="text-xl inline-block relative after:content-[''] after:block after:w-full after:h-[1px] after:bg-gray-300 after:absolute after:bottom-0 after:left-0">
-                    <span class="font-normal">Заказ покупателя:</span>
-                    <span id="order-number-display" class="font-bold ml-1"></span>
-                    <span class="font-normal text-sm ml-2">от </span>
-                    <span id="order-date-display" class="font-normal text-sm"></span>
-                </h2>
-                <h3 class="text-xl mt-4">
-                    <span id="order-buyer-display"  class="font-normal text-sm"></span>
-                </h3>
-                <h3 class="text-xl">
-                    <span id="order-total-display"  class="font-normal text-xl"></span>
-                    <span class="font-normal text-sm">₽</span>
-                </h3>
+                <div class="mb-4"> <!-- Обертка для заголовочной части -->
+                    <h2 class="text-xl inline-block relative after:content-[''] after:block after:w-full after:h-[1px] after:bg-gray-300 after:absolute after:bottom-0 after:left-0">
+                        <span class="font-normal">Заказ покупателя:</span>
+                        <span id="order-number-display" class="font-bold ml-1"></span>
+                        <span class="font-normal text-sm ml-2">от </span>
+                        <span id="order-date-display" class="font-normal text-sm"></span>
+                    </h2>
+                    <h3 class="text-xl mt-4">
+                        <span id="order-buyer-display" class="font-normal text-sm"></span>
+                    </h3>
+                    <h3 class="text-xl">
+                        <span id="order-total-display" class="font-normal text-xl"></span>
+                        <span class="font-normal text-sm">₽</span>
+                    </h3>
+                </div>
 
                 <!-- Таблица позиций заказа -->
-                <table class="my-table mt-4 w-full">
-                    <thead>
-                    <tr>
-                        <th class="px-2 py-1">#</th>
-                        <th class="px-2 py-1">Наименование</th>
-                        <th class="px-2 py-1 text-right">Кол-во</th>
-                        <th class="px-2 py-1 text-right">Сумма</th>
-                    </tr>
-                    </thead>
-                    
-                    <tbody id="order-items-table">
-                    <!-- Заполнится через JS -->
-                    </tbody>
-                </table>
+                <div class="overflow-y-auto pr-2 scrollbar-custom" style="max-height: 60vh; scrollbar-gutter: stable;"> <!-- Добавлен контейнер с прокруткой -->
+                    <!-- Таблица позиций заказа -->
+                    <table class="my-table w-full">
+                        <thead class="sticky top-0 bg-white"> <!-- Заголовок таблицы прилипает -->
+                        <tr>
+                            <th class="w-2 px-2 py-1">#</th>
+                            <th class="w-24 px-2 py-1">Наименование</th>
+                            <th class="w-10 px-2 py-1 text-right">Кол-во</th>
+                            <th class="w-10 px-2 py-1 text-right">Цена</th>
+                            <th class="w-10 px-2 py-1 text-right">Сумма</th>
+                            <th class="w-10 px-2 py-1 text-right">Сумма с НДС</th>
+                        </tr>
+                        </thead>
+                        <tbody id="order-items-table">
+                        <!-- Заполнится через JS -->
+                        </tbody>
+                    </table>
+                </div>
                 
                 <form id="orderForm" method="post">
                     {% csrf_token %}
@@ -95,7 +100,7 @@
                 </thead>
                 <tbody>
                 {% for product in page_obj %}
-                    <tr class="cursor-pointer hover:text-red-400"
+                    <tr class="cursor-pointer hover:text-emerald-500"
                         data-id="{{ product.id }}"
                         onclick="toggleOrderModal(this)">
                     

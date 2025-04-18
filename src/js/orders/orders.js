@@ -1,81 +1,62 @@
-// Функция для открытия и закрытия модального окна (Форма "Просмотр Заказ покупателя")
-async function toggleOrderModal(row = null, modalHorizontalOffset = '350px', modalVerticalOffset = '-145px') {
+async function toggleOrderModal(row = null, modalHorizontalOffset = '450px', modalVerticalOffset = '-380px') {
     const modal = document.getElementById('ordermodal');
-    const modalContent = modal.querySelector('div'); // внутренний div модального окна
+    const modalContent = modal.querySelector('div'); // Основной контейнер модального окна
     const closeModalButton = document.getElementById('close-orders-modal');
-    const loader = document.getElementById('loading-spinner'); // Лоадер
+    const loader = document.getElementById('loading-spinner');
 
     const orderId = row.dataset.id;
 
-    // Настройки размеров модального окна
-    const modalWidth = '800px';
-    const modalHeight = '450px';
+    // Настройки размеров
+    const modalWidth = '900px';
+    const minModalHeight = '350px'; // Минимальная высота модального окна
 
     try {
-        // Показать лоадер перед загрузкой данных
         loader.classList.remove('hidden');
-
         const response = await fetch(`/orders/orderDetails/${orderId}/`);
         const data = await response.json();
 
-        // Заполнение шапки
+        // Заполнение данных
         document.getElementById('order-number-display').textContent = data.number;
         document.getElementById('order-date-display').textContent = data.date_of_formation;
         document.getElementById('order-buyer-display').textContent = data.buyer;
-        // document.getElementById('order-total-display').textContent = data.total;
-        document.getElementById('order-total-display').textContent = data.total.toLocaleString('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        document.getElementById('order-total-display').textContent = data.total.toLocaleString('ru-RU');
 
-
-        // Очистка и заполнение таблицы
+        // Заполнение таблицы
         const tableBody = document.getElementById('order-items-table');
         tableBody.innerHTML = '';
-
-        data.items.forEach((item, index) => {
+        data.items.forEach(item => {
             const row = document.createElement('tr');
-            const formattedTotal = parseFloat(item.total).toLocaleString('ru-RU', {
-                maximumFractionDigits: 2,
-                minimumFractionDigits: 0 // убираем нули после запятой, если их нет
-            });
-
+            row.className = 'cursor-pointer hover:text-emerald-500';
             row.innerHTML = `
-                <td class="px-2 py-1">${item.line_number}</td>
-                <td class="px-2 py-1">${item.name}</td>
-                <td class="px-2 py-1 text-right">${item.quantity}</td>
-                <td class="px-2 py-1 text-right">${formattedTotal}</td>
+                <td class="text-sm px-2 py-1">${item.line_number}</td>
+                <td class="text-sm px-2 py-1">${item.name}</td>                
+                <td class="text-sm px-2 py-1 text-right">${parseFloat(item.quantity).toLocaleString('ru-RU')}</td>
+                <td class="text-sm px-2 py-1 text-right">${parseFloat(item.price).toLocaleString('ru-RU')}</td>
+                <td class="text-sm px-2 py-1 text-right">${parseFloat(item.amount).toLocaleString('ru-RU')}</td>
+                <td class="text-sm px-2 py-1 text-right">${parseFloat(item.total).toLocaleString('ru-RU')}</td>
             `;
             tableBody.appendChild(row);
         });
 
-        // Показать модалку
+        // Позиционирование (фиксируем верхнюю границу)
+        const topPosition = `calc(50% + ${modalVerticalOffset})`;
+
+        modalContent.style.width = modalWidth;
+        modalContent.style.minHeight = minModalHeight; // Устанавливаем минимальную высоту
+        modalContent.style.position = 'absolute';
+        modalContent.style.left = `calc(50% + ${modalHorizontalOffset})`;
+        modalContent.style.top = topPosition;
+        modalContent.style.transform = 'translate(-50%, 0)';
+
         modal.classList.remove('hidden');
     } catch (error) {
-        console.error('Ошибка при загрузке деталей заказа:', error);
+        console.error('Ошибка:', error);
     } finally {
-        // Скрыть лоадер после завершения
         loader.classList.add('hidden');
     }
 
-    // Применяем размеры к модальному окну
-    if (modalContent) {
-        modalContent.style.width = modalWidth;
-        modalContent.style.height = modalHeight;
-        modalContent.style.maxHeight = '90vh';
-        modalContent.style.overflowY = 'auto';
-        modalContent.style.position = 'absolute';
-        modalContent.style.left = `calc(50% + ${modalHorizontalOffset})`;
-        modalContent.style.top = `calc(50% + ${modalVerticalOffset})`;
-        modalContent.style.transform = 'translate(-50%, -50%)';
-    }
-
-    // Обработчики закрытия модального окна
+    // Обработчики закрытия
     closeModalButton.addEventListener('click', () => modal.classList.add('hidden'));
-    modal.addEventListener('click', (event) => {
-        if (event.target === modal) modal.classList.add('hidden');
-    });
-    document.addEventListener('keydown', function escKey(event) {
-        if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
-            modal.classList.add('hidden');
-            document.removeEventListener('keydown', escKey);
-        }
-    });
+    modal.addEventListener('click', (e) => e.target === modal && modal.classList.add('hidden'));
+    document.addEventListener('keydown', (e) => e.key === 'Escape' && modal.classList.add('hidden'));
 }
