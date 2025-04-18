@@ -9,3 +9,28 @@
     /*.my-forTable td {@apply border border-solid border-amber-500}*/
     .my-table tr:nth-child(even) {@apply bg-slate-400/25}
     }
+
+@layer utilities {
+  .scrollbar-custom {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: #c1c1c1 #f1f1f1;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded;
+    margin: 4px 0;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+}
