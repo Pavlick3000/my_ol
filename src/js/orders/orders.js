@@ -14,7 +14,23 @@ async function toggleOrderModal(row = null) {
     const minModalHeight = '350px'; // Минимальная высота модального окна
 
     try {
-        document.querySelector('.tab-btn[data-tab="products-tab"]').click();  // Вкладка "Товары" выбирается по умолчанию
+        // document.querySelector('.tab-btn[data-tab="products-tab"]').click();  // Вкладка "Товары" выбирается по умолчанию
+        const productsTabBtn = document.querySelector('.tab-btn[data-tab="products-tab"]');
+
+        // Удаляем border-transparent и добавляем border-emerald-500
+        productsTabBtn.classList.remove('border-transparent');
+        productsTabBtn.classList.add('border-emerald-500');
+
+        // Деактивируем остальные вкладки
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            if (btn.dataset.tab !== "products-tab") {
+                btn.classList.remove('border-emerald-500');
+                btn.classList.add('border-transparent');
+            }
+        });
+
+        productsTabBtn.click(); // Переключаем на вкладку "Товары"
+
         loader.classList.remove('hidden');
         const response = await fetch(`/orders/orderDetails/${orderId}/`);
         const data = await response.json();
@@ -110,10 +126,10 @@ async function toggleSecondModal(itemId) {
         data.specs.forEach(spec => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="px-2 py-1">${spec.id}</td>
+                
                 <td class="px-2 py-1">${spec.line_number}</td>
                 <td class="px-2 py-1">${spec.name}</td>
-                <td class="px-2 py-1 text-right">${spec.quantity}</td>
+                <td class="px-2 py-1 text-right">${parseFloat(spec.quantity).toLocaleString('ru-RU')}</td>
             `;
             specsTableBody.appendChild(row);
         });
@@ -138,18 +154,41 @@ async function toggleSecondModal(itemId) {
     };
 }
 
-
 // Вкладки модального окна
+// document.querySelectorAll('.tab-btn').forEach(btn => {
+//     btn.addEventListener('click', () => {
+//         // Убрать активность у всех
+//         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('border-emerald-500'));
+//         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+//
+//         // Показать нужную
+//         const target = document.getElementById(btn.dataset.tab);
+//         btn.classList.add('border-emerald-500');
+//         target.classList.remove('hidden');
+//     });
+//
+// });
+
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        // Убрать активность у всех
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('border-emerald-500'));
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+        const targetTabId = btn.dataset.tab;
+        const targetContent = document.getElementById(targetTabId);
 
-        // Показать нужную
-        const target = document.getElementById(btn.dataset.tab);
+        // 1. Скрыть ВЕСЬ контент вкладок
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+
+        // 2. Показать только выбранную вкладку
+        targetContent.classList.remove('hidden');
+
+        // 3. Обновить подчеркивание (если ещё не сделано)
+        document.querySelectorAll('.tab-btn').forEach(otherBtn => {
+            otherBtn.classList.remove('border-emerald-500');
+            otherBtn.classList.add('border-transparent');
+        });
+
+        btn.classList.remove('border-transparent');
         btn.classList.add('border-emerald-500');
-        target.classList.remove('hidden');
     });
-
 });
