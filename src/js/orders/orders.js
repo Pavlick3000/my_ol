@@ -14,7 +14,7 @@ async function toggleOrderModal(row = null) {
     const minModalHeight = '350px'; // Минимальная высота модального окна
 
     try {
-        // document.querySelector('.tab-btn[data-tab="products-tab"]').click();  // Вкладка "Товары" выбирается по умолчанию
+        // Вкладка "Товары" выбирается по умолчанию
         const productsTabBtn = document.querySelector('.tab-btn[data-tab="products-tab"]');
 
         // Удаляем border-transparent и добавляем border-emerald-500
@@ -58,9 +58,8 @@ async function toggleOrderModal(row = null) {
     `;
             itemRow.addEventListener('click', function () {
                 const itemId = this.dataset.itemId;
-                console.log('Item:', item);
-                console.log('Item ID:', itemId); // Проверь, что выводится
-                toggleSecondModal(itemId); // передаётся напрямую
+                const itemName = item.name;
+                toggleSecondModal(itemId, itemName); // передаётся напрямую
             });
             tableBody.appendChild(itemRow);
         });
@@ -98,7 +97,7 @@ async function toggleOrderModal(row = null) {
 }
 
 // Функция для открытия модального окна с содержимым "спецификаций номенклатуры"
-async function toggleSecondModal(itemId) {
+async function toggleSecondModal(itemId, itemName) {
     const modal = document.getElementById('specsModal');
     const modalContent = modal.querySelector('div');
     const closeModalButton = document.getElementById('close-specs-modal');
@@ -120,13 +119,16 @@ async function toggleSecondModal(itemId) {
         const response = await fetch(`/orders/specsDetails/${itemId}/`);
         const data = await response.json();
 
+        // Заполнение данных "Шапка"
+        const titleElement = document.getElementById('specs-modal-title');
+        titleElement.textContent = `Спецификация: ${itemName}`;
+
+        // Заполнение таблицы
         const specsTableBody = document.getElementById('specs-table-body');
         specsTableBody.innerHTML = '';
-
         data.specs.forEach(spec => {
             const row = document.createElement('tr');
-            row.innerHTML = `
-                
+            row.innerHTML = `                
                 <td class="px-2 py-1">${spec.line_number}</td>
                 <td class="px-2 py-1">${spec.name}</td>
                 <td class="px-2 py-1 text-right">${parseFloat(spec.quantity).toLocaleString('ru-RU')}</td>
@@ -155,20 +157,6 @@ async function toggleSecondModal(itemId) {
 }
 
 // Вкладки модального окна
-// document.querySelectorAll('.tab-btn').forEach(btn => {
-//     btn.addEventListener('click', () => {
-//         // Убрать активность у всех
-//         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('border-emerald-500'));
-//         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-//
-//         // Показать нужную
-//         const target = document.getElementById(btn.dataset.tab);
-//         btn.classList.add('border-emerald-500');
-//         target.classList.remove('hidden');
-//     });
-//
-// });
-
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const targetTabId = btn.dataset.tab;
