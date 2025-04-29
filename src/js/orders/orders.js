@@ -28,20 +28,6 @@ async function toggleOrderModal(row = null) {
         // Заполнение таблицы
         const tableBody = document.getElementById('order-items-table');
         tableBody.innerHTML = '';
-        // data.items.forEach(item => {
-        //     const row = document.createElement('tr');
-        //     row.className = 'cursor-pointer hover:text-emerald-500';
-        //     row.dataset.itemId = item.id;  // Добавляем data-атрибут
-        //     row.innerHTML = `
-        //         <td class="text-sm px-2 py-1">${item.line_number}</td>
-        //         <td class="text-sm px-2 py-1">${item.name}</td>
-        //         <td class="text-sm px-2 py-1 text-right">${parseFloat(item.quantity).toLocaleString('ru-RU')}</td>
-        //         <td class="text-sm px-2 py-1 text-right">${parseFloat(item.price).toLocaleString('ru-RU')}</td>
-        //         <td class="text-sm px-2 py-1 text-right">${parseFloat(item.amount).toLocaleString('ru-RU')}</td>
-        //         <td class="text-sm px-2 py-1 text-right">${parseFloat(item.total).toLocaleString('ru-RU')}</td>
-        //     `;
-        //     tableBody.appendChild(row);
-        // });
         data.items.forEach(item => {
             const itemRow = document.createElement('tr');  // переименовано
             itemRow.className = 'cursor-pointer hover:text-emerald-500';

@@ -79,38 +79,25 @@ def orderDetails(request, id):
 
 def specsDetails(request, itemId):
     try:
-        # 1. Получаем номенклатуру по числовому ID (pk)
+        # Получаем номенклатуру по числовому ID (pk)
         nomenc = get_object_or_404(NomencBook, pk=itemId)
         db_id = nomenc.db_id  # BinaryField для связи между моделями
 
-        # 2. Получаем последние записи из InfoRg23775, где name_nomenc = db_id
-        info_records = InfoRg23775.objects.filter(name_nomenc=db_id)
-        if not info_records.exists():
-            return JsonResponse({"error": "Для этой номенклатуры нет спецификаций"}, status=404)
-
-        # 3. Получаем sp_idrref из InfoRg23775 для последних записей
-        sp_idrrefs = info_records.values_list("sp_idrref", flat=True)
-
-        # 4. Получаем последние спецификации через метод get_latest_specs
         specs = SpecList.get_latest_specs(db_id)
 
-        # 5. Если спецификации не найдены, возвращаем ошибку
         if not specs.exists():
             return JsonResponse({"error": "Нет активных спецификаций"}, status=404)
 
-        # 6. Формируем ответ
         specs_data = []
         for spec in specs:
             specs_data.append({
                 "id": spec.id,  # Числовой ID из SpecList
-                "nomenclature": {
-                    "id": nomenc.id,  # Числовой ID из NomencBook
-                    "name": nomenc.name,
-                    "db_id": db_id.hex(),  # BinaryField в виде hex-строки
-                },
+                "name": spec.nomenclature.name,
                 "line_number": int(spec.line_number),
                 "quantity": float(spec.quantity),
             })
+            # Сортировка по line_number
+            specs_data.sort(key=lambda x: x["line_number"])
 
         return JsonResponse({"specs": specs_data})
 

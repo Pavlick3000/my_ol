@@ -1,3 +1,5 @@
+import traceback
+
 from django.db import models
 from django.db.models import Max, Prefetch
 
@@ -130,16 +132,6 @@ class InfoRg23775(models.Model):
         related_name='info_record'
     )
 
-    @classmethod
-    def get_latest_spec_refs(cls):
-        """Возвращает reference259_idrref последних записей для каждой номенклатуры"""
-        latest_ids = (
-            cls.objects.values('name_nomenc')
-            .annotate(max_id=Max('id'))
-            .values_list('max_id', flat=True)
-        )
-        return cls.objects.filter(id__in=latest_ids).values_list('sp_idrref', flat=True)
-
     class Meta:
         managed = False
         db_table = '_InfoRg23775'
@@ -161,43 +153,24 @@ class SpecList(models.Model):
     quantity = models.DecimalField(db_column='_Fld4127', max_digits=15, decimal_places=3)  # Количество
     # fld4134rref = models.TextField(db_column='_Fld4134RRef')  # Вид воспроизводства - надо ли?
 
-    def get_info_rg_data(self):
-        """Возвращает связанные данные из InfoRg23775 без лишних запросов"""
-        if hasattr(self, 'info_rg_records') and self.info_rg_records:
-            record = self.info_rg_records[0]
-            return record.name_nomenc.name if record.name_nomenc else '-'
-        else:
-            # fallback, если префетч не сработал
-            info_record = InfoRg23775.objects.filter(sp_idrref=self.reference259_idrref).first()
-            return info_record.name_nomenc.name if info_record and info_record.name_nomenc else '--- Не основная спецификация ---'
-
     @classmethod
     def get_latest_specs(cls, db_id):
         """
-        Возвращает последние спецификации для номенклатуры с указанным db_id (BinaryField)
-
-        :param db_id: BinaryField из NomencBook (поле db_id)
-        :return: QuerySet с последними спецификациями
+            Возвращает последнюю спецификацию по максимальному id InfoRg23775
+            для заданной номенклатуры db_id.
         """
-        # 1. Получаем reference259_idrref последних спецификаций для этой номенклатуры
-        latest_refs = InfoRg23775.objects.filter(
-            name_nomenc=db_id
-        ).order_by('-id').values_list('sp_idrref', flat=True).distinct()
 
-        if not latest_refs:
+        # 1. Получаем запись с максимальным id по переданному db_id
+        latest_info = InfoRg23775.objects.filter(name_nomenc=db_id).order_by('-id').first()
+
+        if not latest_info:
             return cls.objects.none()
 
-        # 2. Создаем prefetch для связанных данных
-        info_prefetch = Prefetch(
-            'info_record',
-            queryset=InfoRg23775.objects.all(),
-            to_attr='info_rg_records'
-        )
+        # 2. Получаем значение sp_idrref из этой записи
+        latest_sp_idrref = latest_info.sp_idrref_id  # id будет в BinaryField
 
-        # 3. Возвращаем спецификации, ссылающиеся на эти записи
-        return cls.objects.filter(
-            reference259_idrref__in=latest_refs
-        ).select_related('nomenclature').prefetch_related(info_prefetch)
+        # 3. Возвращаем спецификацию, связанную с этим sp_idrref
+        return cls.objects.filter(reference259_idrref=latest_sp_idrref).select_related('nomenclature')
 
     class Meta:
         managed = False

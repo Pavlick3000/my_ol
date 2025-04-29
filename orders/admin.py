@@ -20,7 +20,7 @@ class InfoRg23775Admin(admin.ModelAdmin):
 
 
 class SpecListAdmin(admin.ModelAdmin):
-    list_display = ('id', 'reference259_idrref', 'get_info_rg_data', 'line_number', 'nomenclature_name', 'quantity')
+    list_display = ('id', 'reference259_idrref', 'line_number', 'nomenclature_name', 'quantity')
     # search_fields = ['id']
 
     search_fields = ['id__exact']  # Точный поиск по ID
