@@ -72,13 +72,13 @@ async function toggleOrderModal(row = null) {
         document.getElementById('max-line-number').textContent = maxLineNumber;
 
         // Позиционирование (фиксируем верхнюю границу)
-        const topPosition = `calc(50% + ${modalVerticalOffset})`;
+        // const topPosition = `calc(50% + ${modalVerticalOffset})`;
 
         modalContent.style.width = modalWidth;
         modalContent.style.minHeight = minModalHeight; // Устанавливаем минимальную высоту
         modalContent.style.position = 'absolute';
         modalContent.style.left = `calc(50% + ${modalHorizontalOffset})`;
-        modalContent.style.top = topPosition;
+        modalContent.style.top = `calc(50% + ${modalVerticalOffset})`;
         modalContent.style.transform = 'translate(-50%, 0)';
         modalContent.style.maxHeight = '780px';
 
@@ -104,7 +104,7 @@ async function toggleSecondModal(itemId, itemName) {
 
     const modalHorizontalOffset = '-460px';
     const modalVerticalOffset = '-380px';
-    const modalWidth = '890px';
+    const modalWidth = '900px';
     const minModalHeight = '300px';
 
     modalContent.style.width = modalWidth;
@@ -113,7 +113,7 @@ async function toggleSecondModal(itemId, itemName) {
     modalContent.style.left = `calc(50% + ${modalHorizontalOffset})`;
     modalContent.style.top = `calc(50% + ${modalVerticalOffset})`;
     modalContent.style.transform = 'translate(-50%, 0)';
-    modalContent.style.maxHeight = '80vh';
+    modalContent.style.maxHeight = '780px';
 
     try {
         const response = await fetch(`/orders/specsDetails/${itemId}/`);
@@ -129,9 +129,10 @@ async function toggleSecondModal(itemId, itemName) {
         data.specs.forEach(spec => {
             const row = document.createElement('tr');
             row.innerHTML = `                
-                <td class="px-2 py-1">${spec.line_number}</td>
+                <td class="px-2 py-1 text-center">${spec.line_number}</td>
                 <td class="px-2 py-1">${spec.name}</td>
-                <td class="px-2 py-1 text-right">${parseFloat(spec.quantity).toLocaleString('ru-RU')}</td>
+                <td class="px-2 py-1 text-center">${parseFloat(spec.quantity).toLocaleString('ru-RU')}</td>
+                <td class="px-2 py-1 text-center">${spec.basic_unit}</td>
             `;
             specsTableBody.appendChild(row);
         });

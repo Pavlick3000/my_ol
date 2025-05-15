@@ -172,6 +172,28 @@ class SpecList(models.Model):
         # 3. Возвращаем спецификацию, связанную с этим sp_idrref
         return cls.objects.filter(reference259_idrref=latest_sp_idrref).select_related('nomenclature')
 
+    @property
+    def basic_unit(self):
+        """
+        Возвращает связанный объект BasicUnitBook через nomenclature.basic_unit
+        """
+        from my_erp.models import BasicUnitBook  # Импорт внутри, чтобы избежать циклов
+
+        if self.nomenclature and self.nomenclature.basic_unit:
+            try:
+                return BasicUnitBook.objects.get(db_id=self.nomenclature.basic_unit)
+            except BasicUnitBook.DoesNotExist:
+                return None
+        return None
+
+    @property
+    def basic_unit_name(self):
+        """
+        Возвращает имя единицы измерения, если доступно.
+        """
+        unit = self.basic_unit
+        return unit.name if unit else None
+
     class Meta:
         managed = False
         db_table = '_Reference259_VT4122'

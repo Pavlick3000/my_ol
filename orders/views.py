@@ -6,6 +6,7 @@ from my_erp.models import NomencBook
 from .models import OrdersBook, InfoRg23775, SpecList
 from django.db.models import Q
 
+# Заказы
 def orders(request):
     search_query = request.GET.get('search', '')
     ordersBook = OrdersBook.objects.select_related(
@@ -46,6 +47,7 @@ def orders(request):
         }
     return render(request, 'orders/orders.html', context)
 
+# Детали заказа
 def orderDetails(request, id):
 
     try:
@@ -77,6 +79,7 @@ def orderDetails(request, id):
     except OrdersBook.DoesNotExist:
         return JsonResponse({'error': 'Order not found'}, status=404)
 
+# Спецификации внутри заказа по позиции
 def specsDetails(request, itemId):
     try:
         # Получаем номенклатуру по числовому ID (pk)
@@ -95,6 +98,7 @@ def specsDetails(request, itemId):
                 "name": spec.nomenclature.name,
                 "line_number": int(spec.line_number),
                 "quantity": float(spec.quantity),
+                "basic_unit": spec.basic_unit_name
             })
             # Сортировка по line_number
             specs_data.sort(key=lambda x: x["line_number"])
