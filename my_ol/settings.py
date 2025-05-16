@@ -190,5 +190,5 @@ SESSION_CACHE_ALIAS = 'default'
 SESSION_COOKIE_SECURE = False  # Установите True, если используется HTTPS
 SESSION_COOKIE_HTTPONLY = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Сессия будет закрыта при закрытии браузера
-SESSION_COOKIE_AGE = 3600  # Время жизни сессии в секундах (1 час)
+SESSION_COOKIE_AGE = 86400  # Время жизни сессии в секундах (сутки)
 

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import OrdersBook, BuyerBook, RealizationBook, OrderList, InfoRg23775, SpecList
+from .models import OrdersBook, BuyerBook, RealizationBook, OrderList, InfoRg23775, SpecList, Inforg23220
 
 
 class OrdersBookAdmin(admin.ModelAdmin):
@@ -10,6 +10,17 @@ class BuyerBookAdmin(admin.ModelAdmin):
 
 class RealizationBookAdmin(admin.ModelAdmin):
     list_display = ('number', 'date_of')
+
+class Inforg23220Admin(admin.ModelAdmin):
+    list_display = ('nomenclature_name', 'structure_name', 'quantity')
+
+    def nomenclature_name(self, obj):
+        return obj.name_nomenc.name if obj.name_nomenc else '-'
+    nomenclature_name.short_description = 'nomenclature_name'
+
+    def structure_name(self, obj):
+        return obj.nomenclature.name if obj.nomenclature else '-'
+    structure_name.short_description = 'structure_name'
 
 class InfoRg23775Admin(admin.ModelAdmin):
     list_display = ('id', 'nomenclature_name', 'sp_idrref')
@@ -58,4 +69,5 @@ admin.site.register(BuyerBook, BuyerBookAdmin)
 admin.site.register(RealizationBook, RealizationBookAdmin)
 admin.site.register(OrderList, OrderListAdmin)
 admin.site.register(InfoRg23775, InfoRg23775Admin)
+admin.site.register(Inforg23220, Inforg23220Admin)
 admin.site.register(SpecList, SpecListAdmin)

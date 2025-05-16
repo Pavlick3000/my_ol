@@ -1,10 +1,13 @@
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
+from django.views.decorators.http import require_GET
 
 from my_erp.models import NomencBook
-from .models import OrdersBook, InfoRg23775, SpecList
+from .models import OrdersBook, SpecList, Inforg23220
 from django.db.models import Q
+
+import traceback
 
 # Заказы
 def orders(request):
@@ -66,6 +69,7 @@ def orderDetails(request, id):
                     'id': item.nomenclature.id,
                     'line_number': item.line_number,
                     'name': item.nomenclature.name,
+                    'key': item.nomenclature.type_of_reproduction.hex().upper(),
                     'price': item.price,
                     'amount': item.amount,
                     'quantity': item.quantity,
@@ -79,31 +83,64 @@ def orderDetails(request, id):
     except OrdersBook.DoesNotExist:
         return JsonResponse({'error': 'Order not found'}, status=404)
 
-# Спецификации внутри заказа по позиции
+# Спецификации внутри заказа по позиции или список комплектующих (для номенклатуры без СП, т.е. для вида воспроизводства "Покупка" и "Переработка")
+@require_GET # Можно только Get, POST нельзя ) потестим как оно
 def specsDetails(request, itemId):
+
     try:
-        # Получаем номенклатуру по числовому ID (pk)
+        # Список ключей, для которых используем listOfComponents
+        components_keys = [
+            "8A9F19A74BAB45774108C4B1FE652ABF",  # Переработка
+            "B7E6DB21B73167DF4BB0CD4A7D143950"  # Покупка
+        ]
+
+        # Получаем key из запроса
+        key = request.GET.get("key", "").strip().upper()
+
+        # Получаем номенклатуру
         nomenc = get_object_or_404(NomencBook, pk=itemId)
-        db_id = nomenc.db_id  # BinaryField для связи между моделями
+        db_id = nomenc.db_id
 
-        specs = SpecList.get_latest_specs(db_id)
+        print(f"key: '{key}'")
+        print(f"components_keys: {components_keys}")
+        print(f"key == components_keys[0]: {key == components_keys[0]}")
+        print(f"key in components_keys: {key in components_keys}")
 
-        if not specs.exists():
-            return JsonResponse({"error": "Нет активных спецификаций"}, status=404)
+        if key in components_keys:
+            # Используем listOfComponents
+            components = Inforg23220.objects.filter(name_nomenc=db_id)
+            if not components.exists():
+                return JsonResponse({"error": "Нет зарегистрированных комплектующих"}, status=404)
 
-        specs_data = []
-        for spec in specs:
-            specs_data.append({
-                "id": spec.id,  # Числовой ID из SpecList
-                "name": spec.nomenclature.name,
-                "line_number": int(spec.line_number),
-                "quantity": float(spec.quantity),
-                "basic_unit": spec.basic_unit_name
-            })
-            # Сортировка по line_number
+            specs_data = []
+            for idx, comp in enumerate(components, start=1):
+                specs_data.append({
+                    "line_number": idx,
+                    "name": comp.nomenclature.name,
+                    "quantity": float(comp.quantity),
+                    "basic_unit": comp.basic_unit_name
+                })
+            title_prefix = "Комплектующие"
+        else:
+            # Используем specsDetails
+            specs = SpecList.get_latest_specs(db_id)
+            if not specs.exists():
+                return JsonResponse({"error": "Нет активных спецификаций"}, status=404)
+
+            specs_data = []
+            for spec in specs:
+                specs_data.append({
+                    "id": spec.id,
+                    "name": spec.nomenclature.name,
+                    "line_number": int(spec.line_number),
+                    "quantity": float(spec.quantity),
+                    "basic_unit": spec.basic_unit_name
+                })
+            title_prefix = "Спецификация"
             specs_data.sort(key=lambda x: x["line_number"])
 
-        return JsonResponse({"specs": specs_data})
+        return JsonResponse({"specs": specs_data, "title_prefix": title_prefix})
 
     except Exception as e:
+        traceback.print_exc()
         return JsonResponse({"error": f"Ошибка сервера: {str(e)}"}, status=500)

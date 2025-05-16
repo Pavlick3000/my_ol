@@ -48,6 +48,8 @@ async function toggleOrderModal(row = null) {
             const itemRow = document.createElement('tr');  // переименовано
             itemRow.className = 'cursor-pointer hover:text-emerald-500';
             itemRow.dataset.itemId = item.id;
+            itemRow.dataset.itemName = item.name;
+            itemRow.dataset.key = item.key;
             itemRow.innerHTML = `
         <td class="text-sm px-2 py-1">${item.line_number}</td>
         <td class="text-sm px-2 py-1">${item.name}</td>                
@@ -58,8 +60,9 @@ async function toggleOrderModal(row = null) {
     `;
             itemRow.addEventListener('click', function () {
                 const itemId = this.dataset.itemId;
-                const itemName = item.name;
-                toggleSecondModal(itemId, itemName); // передаётся напрямую
+                const itemName = this.dataset.itemName;
+                const key = this.dataset.key;
+                toggleSecondModal(itemId, itemName, key); // передаётся напрямую
             });
             tableBody.appendChild(itemRow);
         });
@@ -72,8 +75,6 @@ async function toggleOrderModal(row = null) {
         document.getElementById('max-line-number').textContent = maxLineNumber;
 
         // Позиционирование (фиксируем верхнюю границу)
-        // const topPosition = `calc(50% + ${modalVerticalOffset})`;
-
         modalContent.style.width = modalWidth;
         modalContent.style.minHeight = minModalHeight; // Устанавливаем минимальную высоту
         modalContent.style.position = 'absolute';
@@ -96,8 +97,8 @@ async function toggleOrderModal(row = null) {
 
 }
 
-// Функция для открытия модального окна с содержимым "спецификаций номенклатуры"
-async function toggleSecondModal(itemId, itemName) {
+// Функция для открытия модального окна с содержимым "спецификаций номенклатуры"\"список комплектующих"
+async function toggleSecondModal(itemId, itemName, key) {
     const modal = document.getElementById('specsModal');
     const modalContent = modal.querySelector('div');
     const closeModalButton = document.getElementById('close-specs-modal');
@@ -116,12 +117,13 @@ async function toggleSecondModal(itemId, itemName) {
     modalContent.style.maxHeight = '780px';
 
     try {
-        const response = await fetch(`/orders/specsDetails/${itemId}/`);
+        const response = await fetch(`/orders/specsDetails/${itemId}/?key=${key}`);
+        // const response = await fetch(endpoint);
         const data = await response.json();
 
         // Заполнение данных "Шапка"
         const titleElement = document.getElementById('specs-modal-title');
-        titleElement.textContent = `Спецификация: ${itemName}`;
+        titleElement.textContent = `${data.title_prefix}: ${itemName}`;
 
         // Заполнение таблицы
         const specsTableBody = document.getElementById('specs-table-body');

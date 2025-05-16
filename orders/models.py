@@ -1,7 +1,25 @@
-import traceback
-
 from django.db import models
-from django.db.models import Max, Prefetch
+
+# Миксин для подтягивания наименования единицы измерения
+class BasicUnitMixin:
+    def get_basic_unit(self):
+        from my_erp.models import BasicUnitBook
+        ref_obj = getattr(self, 'nomenclature', None)
+        if ref_obj and ref_obj.basic_unit:
+            try:
+                return BasicUnitBook.objects.get(db_id=ref_obj.basic_unit)
+            except BasicUnitBook.DoesNotExist:
+                return None
+        return None
+
+    @property
+    def basic_unit(self):
+        return self.get_basic_unit()
+
+    @property
+    def basic_unit_name(self):
+        unit = self.get_basic_unit()
+        return unit.name if unit else None
 
 # Заказы покупателей
 class OrdersBook(models.Model):
@@ -114,7 +132,7 @@ class OrderList(models.Model):
         verbose_name = 'Состав заказа покупателя'  # Имя модели в админке
         verbose_name_plural = 'Состав заказа покупателя'  # Множественное число в админке
 
-# Регистр сведений "таблица-связь"
+# Регистр сведений "таблица-связь" номенклатура:спецификация
 class InfoRg23775(models.Model):
     name_nomenc = models.ForeignKey(
         'my_erp.NomencBook',
@@ -135,11 +153,37 @@ class InfoRg23775(models.Model):
     class Meta:
         managed = False
         db_table = '_InfoRg23775'
-        verbose_name = 'Регистр сведений'  # Имя модели в админке
-        verbose_name_plural = 'Регистр сведений'  # Множественное число в админке
+        verbose_name = 'Регистр сведений - Совпадение номенклатура:спецификация'  # Имя модели в админке
+        verbose_name_plural = 'Регистр сведений - Совпадение номенклатура:спецификация'  # Множественное число в админке
+
+# Регистр сведений - Список Комплектующих номенклатуры
+class Inforg23220(BasicUnitMixin, models.Model):
+    name_nomenc = models.ForeignKey( # IDRRef таблицы  dbo._Reference175 - искомая номенклатура
+        'my_erp.NomencBook',
+        to_field='db_id',
+        db_column='_Fld23221RRef',
+        on_delete=models.CASCADE,
+        related_name='name_for_23220'
+    )
+
+    nomenclature = models.ForeignKey( # IDRRef таблицы  dbo._Reference175 - то что входит в состав комплектующих
+        'my_erp.NomencBook',
+        to_field='db_id',
+        db_column='_Fld23223RRef',
+        on_delete=models.CASCADE,
+        related_name='structure_for_23220'
+    )
+
+    quantity = models.DecimalField(db_column='_Fld23225', max_digits=15, decimal_places=3)  # Количество
+
+    class Meta:
+        managed = False
+        db_table = '_InfoRg23220'
+        verbose_name = 'Регистр сведений - Список Комплектующих номенклатуры'  # Имя модели в админке
+        verbose_name_plural = 'Регистр сведений - Список Комплектующих номенклатуры'  # Множественное число в админке
 
 # Состав спецификаций
-class SpecList(models.Model):
+class SpecList(BasicUnitMixin, models.Model):
     reference259_idrref = models.BinaryField(db_column='_Reference259_IDRRef', unique=True)  # id поля _Fld23779RRef спецификации из _InfoRg23775
     nomenclature = models.ForeignKey(  # Связь с NomencBook (_Reference175: Номенклатура)
         'my_erp.NomencBook',
@@ -172,31 +216,10 @@ class SpecList(models.Model):
         # 3. Возвращаем спецификацию, связанную с этим sp_idrref
         return cls.objects.filter(reference259_idrref=latest_sp_idrref).select_related('nomenclature')
 
-    @property
-    def basic_unit(self):
-        """
-        Возвращает связанный объект BasicUnitBook через nomenclature.basic_unit
-        """
-        from my_erp.models import BasicUnitBook  # Импорт внутри, чтобы избежать циклов
-
-        if self.nomenclature and self.nomenclature.basic_unit:
-            try:
-                return BasicUnitBook.objects.get(db_id=self.nomenclature.basic_unit)
-            except BasicUnitBook.DoesNotExist:
-                return None
-        return None
-
-    @property
-    def basic_unit_name(self):
-        """
-        Возвращает имя единицы измерения, если доступно.
-        """
-        unit = self.basic_unit
-        return unit.name if unit else None
-
     class Meta:
         managed = False
         db_table = '_Reference259_VT4122'
         verbose_name = 'Состав спецификаций'  # Имя модели в админке
         verbose_name_plural = 'Состав спецификаций'  # Множественное число в админке
+
 
