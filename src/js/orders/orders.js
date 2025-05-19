@@ -6,6 +6,7 @@ async function toggleOrderModal(row = null) {
     const loader = document.getElementById('loading-spinner');
 
     const orderId = row.dataset.id;
+    modal.dataset.orderId = orderId; // Сохраняем ID заказа в модальном окне
 
     // Настройки размеров
     const modalHorizontalOffset = '450px';
@@ -82,6 +83,8 @@ async function toggleOrderModal(row = null) {
             : 0;
 
         document.getElementById('max-line-number').textContent = maxLineNumber;
+        // Запускаем фоновую загрузку материалов
+        loadMaterialsCount(orderId);
 
         modal.classList.remove('hidden');
     } catch (error) {
@@ -95,6 +98,96 @@ async function toggleOrderModal(row = null) {
     modal.addEventListener('click', (e) => e.target === modal && modal.classList.add('hidden'));
     document.addEventListener('keydown', (e) => e.key === 'Escape' && modal.classList.add('hidden'));
 
+}
+
+// Загрузка и отображение агрегированной номенклатуры во вкладке "Материалы"
+async function loadMaterialsTab(orderId) {
+    const materialsTabContent = document.getElementById('materials-tab');
+    const loader = document.getElementById('modal-inner-loader');
+
+    // const loader = document.getElementById('materials-loader');
+    // const table = document.getElementById('materials-table');
+    // const loader = document.getElementById('modal-table-loader');
+
+    try {
+        loader.classList.remove('hidden');
+        // table.classList.add('hidden');
+
+        // Загружаем детали заказа
+        const orderResponse = await fetch(`/orders/orderDetails/${orderId}/`);
+        const orderData = await orderResponse.json();
+
+        // Собираем все спецификации товаров
+        const allMaterials = [];
+        const materialPromises = [];
+
+        for (const item of orderData.items) {
+            materialPromises.push(
+                fetch(`/orders/specsDetails/${item.id}/?key=${item.key}`)
+                    .then(response => response.json())
+                    .then(specData => {
+                        if (specData.specs && specData.specs.length > 0) {
+                            const itemQuantity = parseFloat(item.quantity);
+                            specData.specs.forEach(spec => {
+                                allMaterials.push({
+                                    name: spec.name,
+                                    quantity: parseFloat(spec.quantity) * itemQuantity,
+                                    unit: spec.basic_unit
+                                });
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`Ошибка загрузки спецификации для товара ${item.id}:`, error);
+                    })
+            );
+        }
+
+        // Ждем завершения всех запросов
+        await Promise.all(materialPromises);
+
+        // Группируем материалы по наименованию и единицам измерения
+        const groupedMaterials = {};
+
+        allMaterials.forEach(material => {
+            const key = `${material.name}|${material.unit}`;
+            if (!groupedMaterials[key]) {
+                groupedMaterials[key] = {
+                    name: material.name,
+                    quantity: 0,
+                    unit: material.unit
+                };
+            }
+            groupedMaterials[key].quantity += material.quantity;
+        });
+
+        // Сортируем материалы по наименованию
+        const sortedMaterials = Object.values(groupedMaterials)
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+        // Заполняем таблицу
+        const materialsTableBody = document.getElementById('materials-table-body');
+
+        sortedMaterials.forEach((material, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="text-sm px-2 py-1 text-center">${index + 1}</td>
+                <td class="text-sm px-2 py-1">${material.name}</td>
+                <td class="text-sm px-2 py-1 text-right">${material.quantity.toLocaleString('ru-RU')}</td>
+                <td class="text-sm px-2 py-1 text-center">${material.unit}</td>
+            `;
+            materialsTableBody.appendChild(row);
+        });
+
+    } catch (error) {
+        console.error('Ошибка загрузки материалов:', error);
+        materialsTabContent.innerHTML = `
+            <p class="text-sm text-red-500">Ошибка загрузки списка материалов: ${error.message}</p>
+        `;
+    } finally {
+        loader.classList.add('hidden');
+        // table.classList.remove('hidden');
+    }
 }
 
 // Функция для открытия модального окна с содержимым "спецификаций номенклатуры"\"список комплектующих"
@@ -153,6 +246,55 @@ async function toggleSecondModal(itemId, itemName, key) {
     modalSecond.addEventListener('click', (e) => e.target === modalSecond && modalSecond.classList.add('hidden'));
     document.addEventListener('keydown', (e) => e.key === 'Escape' && modalSecond.classList.add('hidden'));
 
+}
+
+// Обработчик клика по вкладке "Материалы"
+document.querySelector('.tab-btn[data-tab="materials-tab"]').addEventListener('click', function() {
+    const modal = document.getElementById('ordermodal');
+    const orderId = modal.dataset.orderId; // Получаем сохраненный ID заказа
+    const materialsTableBody = document.getElementById('materials-table-body');
+
+    if (orderId) {
+        materialsTableBody.innerHTML = '';
+        loadMaterialsTab(orderId);
+    }
+});
+
+// Прелоадер значения количество строк во вкладке "Материалы"
+async function loadMaterialsCount(orderId) {
+    const lineCounter = document.getElementById('materials-line-number');
+
+    try {
+        // Показываем индикатор загрузки
+        lineCounter.textContent = '...';
+
+        const orderResponse = await fetch(`/orders/orderDetails/${orderId}/`);
+        const orderData = await orderResponse.json();
+
+        // Собираем все спецификации товаров
+        const materialPromises = orderData.items.map(item =>
+            fetch(`/orders/specsDetails/${item.id}/?key=${item.key}`)
+                .then(response => response.json())
+                .catch(() => ({ specs: [] })) // В случае ошибки возвращаем пустой массив
+        );
+
+        const allSpecs = await Promise.all(materialPromises);
+
+        // Считаем уникальные материалы
+        const uniqueMaterials = new Set();
+        allSpecs.forEach(specData => {
+            specData.specs?.forEach(spec => {
+                uniqueMaterials.add(`${spec.name}|${spec.basic_unit}`);
+            });
+        });
+
+        // Обновляем счетчик
+        lineCounter.textContent = uniqueMaterials.size;
+
+    } catch (error) {
+        console.error('Ошибка подсчета материалов:', error);
+        lineCounter.textContent = '0';
+    }
 }
 
 // Вкладки модального окна
