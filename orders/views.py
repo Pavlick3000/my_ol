@@ -52,31 +52,40 @@ def orders(request):
 
 # Детали заказа
 def orderDetails(request, id):
-
     try:
         order = OrdersBook.objects.get(pk=id)
         order_items = order.order_items.select_related('nomenclature')
-
         order_items = order_items.order_by('line_number')
+
+        has_missing_keys = False
+
+        items_data = []
+        for item in order_items:
+
+            # Обыгрываем отсутствие информации по "Виду воспроизводства"
+            type_of_reproduction = item.nomenclature.type_of_reproduction
+            if type_of_reproduction:
+                key = type_of_reproduction.hex().upper()
+            else:
+                key = 'Вид воспроизводства не выбран'
+
+            items_data.append({
+                'id': item.nomenclature.id,
+                'line_number': item.line_number,
+                'name': item.nomenclature.name,
+                'key': key,
+                'price': item.price,
+                'amount': item.amount,
+                'quantity': item.quantity,
+                'total': item.sum_total,
+            })
 
         data = {
             'number': order.formatted_number(),
             'date_of_formation': order.date_of_formation.strftime('%d.%m.%Y'),
             'buyer': order.buyer.description if order.buyer else 'неизвестен',
             'total': float(order.cost),
-            'items': [
-                {
-                    'id': item.nomenclature.id,
-                    'line_number': item.line_number,
-                    'name': item.nomenclature.name,
-                    'key': item.nomenclature.type_of_reproduction.hex().upper(),
-                    'price': item.price,
-                    'amount': item.amount,
-                    'quantity': item.quantity,
-                    'total': item.sum_total,
-                }
-                for item in order_items
-            ]
+            'items': items_data,
         }
 
         return JsonResponse(data)
@@ -86,33 +95,45 @@ def orderDetails(request, id):
 # Спецификации внутри заказа по позиции или список комплектующих (для номенклатуры без СП, т.е. для вида воспроизводства "Покупка" и "Переработка")
 @require_GET # Можно только Get, POST нельзя ) потестим как оно
 def specsDetails(request, itemId):
-
     try:
-        # Список ключей, для которых используем listOfComponents
         components_keys = [
             "8A9F19A74BAB45774108C4B1FE652ABF",  # Переработка
             "B7E6DB21B73167DF4BB0CD4A7D143950"  # Покупка
         ]
 
-        # Получаем key из запроса
         key = request.GET.get("key", "").strip().upper()
-
-        # Получаем номенклатуру
         nomenc = get_object_or_404(NomencBook, pk=itemId)
         db_id = nomenc.db_id
 
-        print(f"key: '{key}'")
-        print(f"components_keys: {components_keys}")
-        print(f"key == components_keys[0]: {key == components_keys[0]}")
-        print(f"key in components_keys: {key in components_keys}")
+        specs_data = []
+        title_prefix = ""
 
-        if key in components_keys:
-            # Используем listOfComponents
+        use_components = key in components_keys
+
+        # Сначала пробуем получить спецификацию
+        if not use_components:
+            specs = SpecList.get_latest_specs(db_id)
+            if specs.exists():
+                for spec in specs:
+                    specs_data.append({
+                        "id": spec.id,
+                        "name": spec.nomenclature.name,
+                        "line_number": int(spec.line_number),
+                        "quantity": float(spec.quantity),
+                        "basic_unit": spec.basic_unit_name
+                    })
+                specs_data.sort(key=lambda x: x["line_number"])
+                title_prefix = "Спецификация"
+            else:
+                # Если спецификации нет, переходим к компонентам
+                use_components = True
+
+        # Если нужно использовать компоненты (либо по ключу, либо после fallback-а)
+        if use_components:
             components = Inforg23220.objects.filter(name_nomenc=db_id)
             if not components.exists():
                 return JsonResponse({"error": "Нет зарегистрированных комплектующих"}, status=404)
 
-            specs_data = []
             for idx, comp in enumerate(components, start=1):
                 specs_data.append({
                     "line_number": idx,
@@ -121,23 +142,6 @@ def specsDetails(request, itemId):
                     "basic_unit": comp.basic_unit_name
                 })
             title_prefix = "Комплектующие"
-        else:
-            # Используем specsDetails
-            specs = SpecList.get_latest_specs(db_id)
-            if not specs.exists():
-                return JsonResponse({"error": "Нет активных спецификаций"}, status=404)
-
-            specs_data = []
-            for spec in specs:
-                specs_data.append({
-                    "id": spec.id,
-                    "name": spec.nomenclature.name,
-                    "line_number": int(spec.line_number),
-                    "quantity": float(spec.quantity),
-                    "basic_unit": spec.basic_unit_name
-                })
-            title_prefix = "Спецификация"
-            specs_data.sort(key=lambda x: x["line_number"])
 
         return JsonResponse({"specs": specs_data, "title_prefix": title_prefix})
 

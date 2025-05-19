@@ -13,6 +13,15 @@ async function toggleOrderModal(row = null) {
     const modalWidth = '900px';
     const minModalHeight = '350px'; // Минимальная высота модального окна
 
+    // Позиционирование (фиксируем верхнюю границу)
+    modalContent.style.width = modalWidth;
+    modalContent.style.minHeight = minModalHeight; // Устанавливаем минимальную высоту
+    modalContent.style.position = 'absolute';
+    modalContent.style.left = `calc(50% + ${modalHorizontalOffset})`;
+    modalContent.style.top = `calc(50% + ${modalVerticalOffset})`;
+    modalContent.style.transform = 'translate(-50%, 0)';
+    modalContent.style.maxHeight = '780px';
+
     try {
         // Вкладка "Товары" выбирается по умолчанию
         const productsTabBtn = document.querySelector('.tab-btn[data-tab="products-tab"]');
@@ -51,13 +60,13 @@ async function toggleOrderModal(row = null) {
             itemRow.dataset.itemName = item.name;
             itemRow.dataset.key = item.key;
             itemRow.innerHTML = `
-        <td class="text-sm px-2 py-1">${item.line_number}</td>
-        <td class="text-sm px-2 py-1">${item.name}</td>                
-        <td class="text-sm px-2 py-1 text-right">${parseFloat(item.quantity).toLocaleString('ru-RU')}</td>
-        <td class="text-sm px-2 py-1 text-right">${parseFloat(item.price).toLocaleString('ru-RU')}</td>
-        <td class="text-sm px-2 py-1 text-right">${parseFloat(item.amount).toLocaleString('ru-RU')}</td>
-        <td class="text-sm px-2 py-1 text-right">${parseFloat(item.total).toLocaleString('ru-RU')}</td>
-    `;
+                <td class="text-sm px-2 py-1">${item.line_number}</td>
+                <td class="text-sm px-2 py-1">${item.name}</td>                
+                <td class="text-sm px-2 py-1 text-right">${parseFloat(item.quantity).toLocaleString('ru-RU')}</td>
+                <td class="text-sm px-2 py-1 text-right">${parseFloat(item.price).toLocaleString('ru-RU')}</td>
+                <td class="text-sm px-2 py-1 text-right">${parseFloat(item.amount).toLocaleString('ru-RU')}</td>
+                <td class="text-sm px-2 py-1 text-right">${parseFloat(item.total).toLocaleString('ru-RU')}</td>
+            `;
             itemRow.addEventListener('click', function () {
                 const itemId = this.dataset.itemId;
                 const itemName = this.dataset.itemName;
@@ -73,15 +82,6 @@ async function toggleOrderModal(row = null) {
             : 0;
 
         document.getElementById('max-line-number').textContent = maxLineNumber;
-
-        // Позиционирование (фиксируем верхнюю границу)
-        modalContent.style.width = modalWidth;
-        modalContent.style.minHeight = minModalHeight; // Устанавливаем минимальную высоту
-        modalContent.style.position = 'absolute';
-        modalContent.style.left = `calc(50% + ${modalHorizontalOffset})`;
-        modalContent.style.top = `calc(50% + ${modalVerticalOffset})`;
-        modalContent.style.transform = 'translate(-50%, 0)';
-        modalContent.style.maxHeight = '780px';
 
         modal.classList.remove('hidden');
     } catch (error) {
@@ -99,24 +99,26 @@ async function toggleOrderModal(row = null) {
 
 // Функция для открытия модального окна с содержимым "спецификаций номенклатуры"\"список комплектующих"
 async function toggleSecondModal(itemId, itemName, key) {
-    const modal = document.getElementById('specsModal');
-    const modalContent = modal.querySelector('div');
-    const closeModalButton = document.getElementById('close-specs-modal');
+    const modalSecond = document.getElementById('specsModal');
+    const modalSecondContent = modalSecond.querySelector('div');
+    const closeSecondModalButton = document.getElementById('close-specs-modal');
+    const loader = document.getElementById('modal-inner-loader');
 
     const modalHorizontalOffset = '-460px';
     const modalVerticalOffset = '-380px';
     const modalWidth = '900px';
     const minModalHeight = '300px';
 
-    modalContent.style.width = modalWidth;
-    modalContent.style.minHeight = minModalHeight;
-    modalContent.style.position = 'absolute';
-    modalContent.style.left = `calc(50% + ${modalHorizontalOffset})`;
-    modalContent.style.top = `calc(50% + ${modalVerticalOffset})`;
-    modalContent.style.transform = 'translate(-50%, 0)';
-    modalContent.style.maxHeight = '780px';
+    modalSecondContent.style.width = modalWidth;
+    modalSecondContent.style.minHeight = minModalHeight;
+    modalSecondContent.style.position = 'absolute';
+    modalSecondContent.style.left = `calc(50% + ${modalHorizontalOffset})`;
+    modalSecondContent.style.top = `calc(50% + ${modalVerticalOffset})`;
+    modalSecondContent.style.transform = 'translate(-50%, 0)';
+    modalSecondContent.style.maxHeight = '780px';
 
     try {
+        loader.classList.remove('hidden');
         const response = await fetch(`/orders/specsDetails/${itemId}/?key=${key}`);
         // const response = await fetch(endpoint);
         const data = await response.json();
@@ -139,24 +141,18 @@ async function toggleSecondModal(itemId, itemName, key) {
             specsTableBody.appendChild(row);
         });
 
-        modal.classList.remove('hidden');
+        modalSecond.classList.remove('hidden');
 
     } catch (error) {
         console.error('Ошибка загрузки спецификаций:', error);
+    } finally {
+        loader.classList.add('hidden');
     }
 
-    const closeModal = () => modal.classList.add('hidden');
-    closeModalButton.addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => e.target === modal && closeModal());
-    document.addEventListener('keydown', (e) => e.key === 'Escape' && closeModal());
+    closeSecondModalButton.addEventListener('click', () => modalSecond.classList.add('hidden'));
+    modalSecond.addEventListener('click', (e) => e.target === modalSecond && modalSecond.classList.add('hidden'));
+    document.addEventListener('keydown', (e) => e.key === 'Escape' && modalSecond.classList.add('hidden'));
 
-    return {
-        close: () => {
-            closeModalButton.removeEventListener('click', closeModal);
-            modal.removeEventListener('click', closeModal);
-            document.removeEventListener('keydown', closeModal);
-        }
-    };
 }
 
 // Вкладки модального окна
