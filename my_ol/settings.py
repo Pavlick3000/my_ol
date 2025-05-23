@@ -146,8 +146,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = '/static/'
-# STATIC_ROOT = BASE_DIR / 'static'
-# STATIC_ROOT = [BASE_DIR / "src"]
 STATICFILES_DIRS = [BASE_DIR / "src"]
 
 # Default primary key field type
@@ -191,4 +189,15 @@ SESSION_COOKIE_SECURE = False  # Установите True, если испол�
 SESSION_COOKIE_HTTPONLY = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Сессия будет закрыта при закрытии браузера
 SESSION_COOKIE_AGE = 86400  # Время жизни сессии в секундах (сутки)
+
+# CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'  # Адрес Redis
+# CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_BEAT_SCHEDULE = {
+#     'check-trigger-log': {
+#         'task': 'orders.tasks.check_cache_triggers',
+#         'schedule': 10.0,  # Проверка каждые 10 сек (можно увеличить)
+#     }
+# }
 

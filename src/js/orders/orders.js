@@ -43,6 +43,8 @@ async function toggleOrderModal(row = null) {
 
         loader.classList.remove('hidden');
         const response = await fetch(`/orders/orderDetails/${orderId}/`);
+        // const response = await fetch(`/orders/orderDetails/${orderId}/?nocache=${Date.now()}`);
+
         const data = await response.json();
 
         // Заполнение данных "Шапка"
@@ -60,6 +62,7 @@ async function toggleOrderModal(row = null) {
             itemRow.dataset.itemId = item.id;
             itemRow.dataset.itemName = item.name;
             itemRow.dataset.key = item.key;
+            itemRow.dataset.key_material = item.key_material;
             itemRow.innerHTML = `
                 <td class="text-sm px-2 py-1">${item.line_number}</td>
                 <td class="text-sm px-2 py-1">${item.name}</td>                
@@ -72,7 +75,8 @@ async function toggleOrderModal(row = null) {
                 const itemId = this.dataset.itemId;
                 const itemName = this.dataset.itemName;
                 const key = this.dataset.key;
-                toggleSecondModal(itemId, itemName, key); // передаётся напрямую
+                const key_material = this.dataset.key_material;
+                toggleSecondModal(itemId, itemName, key, key_material); // передаётся напрямую
             });
             tableBody.appendChild(itemRow);
         });
@@ -103,15 +107,12 @@ async function toggleOrderModal(row = null) {
 // Загрузка и отображение агрегированной номенклатуры во вкладке "Материалы"
 async function loadMaterialsTab(orderId) {
     const materialsTabContent = document.getElementById('materials-tab');
-    const loader = document.getElementById('modal-inner-loader');
-
-    // const loader = document.getElementById('materials-loader');
-    // const table = document.getElementById('materials-table');
-    // const loader = document.getElementById('modal-table-loader');
+    const loader = document.getElementById('materials-loader');
+    const table = document.getElementById('materials-table');
 
     try {
         loader.classList.remove('hidden');
-        // table.classList.add('hidden');
+        table.classList.add('hidden');
 
         // Загружаем детали заказа
         const orderResponse = await fetch(`/orders/orderDetails/${orderId}/`);
@@ -123,7 +124,7 @@ async function loadMaterialsTab(orderId) {
 
         for (const item of orderData.items) {
             materialPromises.push(
-                fetch(`/orders/specsDetails/${item.id}/?key=${item.key}`)
+                fetch(`/orders/specsDetails/${item.id}/?key=${item.key}&key_material=${item.key_material}`)
                     .then(response => response.json())
                     .then(specData => {
                         if (specData.specs && specData.specs.length > 0) {
@@ -186,7 +187,7 @@ async function loadMaterialsTab(orderId) {
         `;
     } finally {
         loader.classList.add('hidden');
-        // table.classList.remove('hidden');
+        table.classList.remove('hidden');
     }
 }
 
@@ -273,7 +274,7 @@ async function loadMaterialsCount(orderId) {
 
         // Собираем все спецификации товаров
         const materialPromises = orderData.items.map(item =>
-            fetch(`/orders/specsDetails/${item.id}/?key=${item.key}`)
+            fetch(`/orders/specsDetails/${item.id}/?key=${item.key}&key_material=${item.key_material}`)
                 .then(response => response.json())
                 .catch(() => ({ specs: [] })) // В случае ошибки возвращаем пустой массив
         );

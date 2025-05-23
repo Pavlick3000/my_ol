@@ -1,5 +1,7 @@
 from django.db import models
 
+
+
 # Миксин для подтягивания наименования единицы измерения
 class BasicUnitMixin:
     def get_basic_unit(self):
@@ -58,6 +60,15 @@ class OrdersBook(models.Model):
         import re
         number = re.sub(r'^[^\d]+0*', '', self.number)  # Удаляет все символы перед цифрами и ведущие нули
         return f'{number}'
+
+    def to_json(self):
+        return {
+            # "id": str(self.pk),
+            "number": self.number,
+            # "date": self.date.isoformat(),
+            "buyer": self.buyer,
+            # "total": str(self.total),
+        }
 
 # Контрагенты
 class BuyerBook(models.Model):

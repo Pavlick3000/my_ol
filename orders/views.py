@@ -1,7 +1,10 @@
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
-from django.views.decorators.http import require_GET
+from django.views.decorators.cache import cache_page
+
+from django.views.decorators.http import require_GET, require_POST
+from django.core.cache import cache
 
 from my_erp.models import NomencBook
 from .models import OrdersBook, SpecList, Inforg23220
@@ -12,6 +15,8 @@ import traceback
 # Заказы
 def orders(request):
     search_query = request.GET.get('search', '')
+    page_number = request.GET.get('page', 1)
+
     ordersBook = OrdersBook.objects.select_related(
         'buyer'  # Прямая связь с BuyerBook
     ).prefetch_related(
@@ -35,8 +40,6 @@ def orders(request):
         )
 
     ordersBook = ordersBook.order_by('-date_of_formation')
-
-    page_number = request.GET.get('page', 1)
     paginator = Paginator(ordersBook, 20)
     page_obj = paginator.get_page(page_number)
 
@@ -52,45 +55,46 @@ def orders(request):
 
 # Детали заказа
 def orderDetails(request, id):
-    try:
-        order = OrdersBook.objects.get(pk=id)
-        order_items = order.order_items.select_related('nomenclature')
-        order_items = order_items.order_by('line_number')
 
-        has_missing_keys = False
+        try:
+            order = OrdersBook.objects.get(pk=id)
+            order_items = order.order_items.select_related('nomenclature')
+            order_items = order_items.order_by('line_number')
 
-        items_data = []
-        for item in order_items:
+            items_data = []
+            for item in order_items:
 
-            # Обыгрываем отсутствие информации по "Виду воспроизводства"
-            type_of_reproduction = item.nomenclature.type_of_reproduction
-            if type_of_reproduction:
-                key = type_of_reproduction.hex().upper()
-            else:
-                key = 'Вид воспроизводства не выбран'
+                # Обыгрываем отсутствие информации по "Виду воспроизводства"
+                type_of_reproduction = item.nomenclature.type_of_reproduction
+                if type_of_reproduction:
+                    key = type_of_reproduction.hex().upper()
+                else:
+                    key = 'Вид воспроизводства не выбран'
 
-            items_data.append({
-                'id': item.nomenclature.id,
-                'line_number': item.line_number,
-                'name': item.nomenclature.name,
-                'key': key,
-                'price': item.price,
-                'amount': item.amount,
-                'quantity': item.quantity,
-                'total': item.sum_total,
-            })
+                items_data.append({
+                    'id': item.nomenclature.id,
+                    'line_number': item.line_number,
+                    'name': item.nomenclature.name,
+                    'key': key,
+                    'key_material': item.nomenclature.view.hex().upper(),
+                    'price': item.price,
+                    'amount': item.amount,
+                    'quantity': item.quantity,
+                    'total': item.sum_total,
+                })
 
-        data = {
-            'number': order.formatted_number(),
-            'date_of_formation': order.date_of_formation.strftime('%d.%m.%Y'),
-            'buyer': order.buyer.description if order.buyer else 'неизвестен',
-            'total': float(order.cost),
-            'items': items_data,
-        }
+            data = {
+                'number': order.formatted_number(),
+                'date_of_formation': order.date_of_formation.strftime('%d.%m.%Y'),
+                'buyer': order.buyer.description if order.buyer else 'неизвестен',
+                'total': float(order.cost),
+                'items': items_data,
+            }
 
-        return JsonResponse(data)
-    except OrdersBook.DoesNotExist:
-        return JsonResponse({'error': 'Order not found'}, status=404)
+
+            return JsonResponse(data)
+        except OrdersBook.DoesNotExist:
+            return JsonResponse({'error': 'Order not found'}, status=404)
 
 # Спецификации внутри заказа по позиции или список комплектующих (для номенклатуры без СП, т.е. для вида воспроизводства "Покупка" и "Переработка")
 @require_GET # Можно только Get, POST нельзя ) потестим как оно
@@ -101,12 +105,30 @@ def specsDetails(request, itemId):
             "B7E6DB21B73167DF4BB0CD4A7D143950"  # Покупка
         ]
 
+        material_keys = [
+            "BA800CC47A229A2311E6C84091631332",  # Товар
+            "BA800CC47A229A2311E6C84091631333"  # Материал
+        ]  # Замените на реальный ключ для материала
+
         key = request.GET.get("key", "").strip().upper()
+        key_material = request.GET.get("key_material", "").strip().upper()
+        print(f"key_material: {key_material}")
         nomenc = get_object_or_404(NomencBook, pk=itemId)
         db_id = nomenc.db_id
 
         specs_data = []
         title_prefix = ""
+
+        # Если это материал, сразу возвращаем его как единственный элемент в спецификации
+        if key_material in material_keys:
+            specs_data.append({
+                "line_number": 1,
+                "name": nomenc.name,
+                "quantity": 1.0,  # или другое значение по умолчанию/из запроса
+                "basic_unit": nomenc.basic_unit_name if hasattr(nomenc, 'basic_unit_name') else "шт"
+            })
+            title_prefix = "Материал"
+            return JsonResponse({"specs": specs_data, "title_prefix": title_prefix})
 
         use_components = key in components_keys
 

@@ -1,6 +1,7 @@
 import uuid
 from django.db import models, transaction
 
+# Справочник - Единицы измерения
 class BasicUnitBook(models.Model):
     db_id = models.BinaryField(db_column='_IDRRef', unique=True)
     name = models.CharField(db_column='_Description', max_length=25, db_collation='Cyrillic_General_CI_AS')
@@ -14,6 +15,7 @@ class BasicUnitBook(models.Model):
     def __str__(self):
         return self.name
 
+# Справочник - Вид воспроизводства
 class ProductionTypeBook(models.Model):
     reproduction = models.BinaryField (db_column='Code', unique=True, null=True)
     name = models.CharField(db_column='Name', max_length=100, null=True)
@@ -27,6 +29,19 @@ class ProductionTypeBook(models.Model):
     def __str__(self):
         return self.name
 
+# Справочник - Вид номенклатуры
+class TypeOfItem(models.Model):
+    db_id = models.BinaryField(db_column='_IDRRef', primary_key=True)
+    name = models.CharField(db_column='_Description', max_length=50, db_collation='Cyrillic_General_CI_AS')  # Field name made lowercase. Field renamed because it started with '_'.
+    # field_code = models.CharField(db_column='_Code', max_length=9, db_collation='Cyrillic_General_CI_AS')  # Field name made lowercase. Field renamed because it started with '_'.
+
+    class Meta:
+        managed = False
+        db_table = '_Reference62'
+        verbose_name = 'Вид номенклатуры'  # Имя модели в админке
+        verbose_name_plural = 'Вид номенклатуры'  # Множественное число в админке
+
+# Справочник - Номенклатура
 class NomencBook(models.Model):
 
     # ____ Служебные поля ___
@@ -34,7 +49,7 @@ class NomencBook(models.Model):
     field_code = models.CharField(db_column='_Code', max_length=11, db_collation='Cyrillic_General_CI_AS', editable=False)  # Поле содержащее "Код"
     field_folder = models.BinaryField(db_column='_Folder', default=b'\x01', editable=False)  # TODO тут будет реализовать выбор - создаем "папку/она же группа" или нет
     field_marked = models.BinaryField(db_column='_Marked', default=b'\x00', editable=False)  # Маркер "На удаление"
-    qnt = models.DecimalField(db_column="Qnt", max_digits=15, decimal_places=3, null=True, blank=True) # Поле с количеством, которое вычисляется в таблице Stocks внутри БД
+    qnt = models.DecimalField(db_column="Qnt", max_digits=15, decimal_places=3, null=True, blank=True) # Поле с количеством
 
     # ____ Поля для пользователя ____
         # Не зависят от field_folder
@@ -162,6 +177,7 @@ class NomencBook(models.Model):
 
         super().save(*args, **kwargs)
 
+# Справочник - Номенклатура:Единица измерения (да на это выведена отдельная таблица)
 class NomencUnitBook(models.Model):
     db_id = models.BinaryField(db_column='_IDRRef', editable=False) # для новых записей сюда генерится значение uuid, которое потом попадает в basic_unit_1 и basic_unit_2 NomencBook
     field_marked = models.BinaryField(db_column='_Marked', default=b'\x00', editable=False) # Маркер "На удаление"
