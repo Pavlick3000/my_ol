@@ -11,7 +11,7 @@
         </div>
     
         <!-- Модальное окно "Детали заказа покупателя" -->
-        <div id="ordermodal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div id="ordermodal" class="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center hidden z-50">
             <div class="bg-white p-6 rounded-lg w-max shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out">
 
                 <!-- Кнопка закрытия -->
@@ -27,6 +27,9 @@
                         <span class="font-normal text-sm ml-2">от</span>
                         <span id="order-date-display" class="font-normal text-sm"></span>
                     </h2>
+                    <div class="flex justify-between items-center mb-4">
+                        <button id="refresh-order-btn" class="text-sm text-blue-500 hover:underline">Обновить</button>
+                    </div>
                     <h3 class="text-xl mt-4">
                         <span id="order-buyer-display" class="font-normal text-sm"></span>
                     </h3>

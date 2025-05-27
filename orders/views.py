@@ -54,47 +54,52 @@ def orders(request):
     return render(request, 'orders/orders.html', context)
 
 # Детали заказа
+@require_GET
 def orderDetails(request, id):
+    try:
+        refresh = request.GET.get("refresh") == "1"
+        cache_key = f"order_details:{id}"
 
-        try:
-            order = OrdersBook.objects.get(pk=id)
-            order_items = order.order_items.select_related('nomenclature')
-            order_items = order_items.order_by('line_number')
+        if refresh:
+            cache.delete(cache_key)
 
-            items_data = []
-            for item in order_items:
-
-                # Обыгрываем отсутствие информации по "Виду воспроизводства"
-                type_of_reproduction = item.nomenclature.type_of_reproduction
-                if type_of_reproduction:
-                    key = type_of_reproduction.hex().upper()
-                else:
-                    key = 'Вид воспроизводства не выбран'
-
-                items_data.append({
-                    'id': item.nomenclature.id,
-                    'line_number': item.line_number,
-                    'name': item.nomenclature.name,
-                    'key': key,
-                    'key_material': item.nomenclature.view.hex().upper(),
-                    'price': item.price,
-                    'amount': item.amount,
-                    'quantity': item.quantity,
-                    'total': item.sum_total,
-                })
-
-            data = {
-                'number': order.formatted_number(),
-                'date_of_formation': order.date_of_formation.strftime('%d.%m.%Y'),
-                'buyer': order.buyer.description if order.buyer else 'неизвестен',
-                'total': float(order.cost),
-                'items': items_data,
-            }
-
-
+        data = cache.get(cache_key)
+        if data:
             return JsonResponse(data)
-        except OrdersBook.DoesNotExist:
-            return JsonResponse({'error': 'Order not found'}, status=404)
+
+        order = OrdersBook.objects.get(pk=id)
+        order_items = order.order_items.select_related('nomenclature').order_by('line_number')
+
+        items_data = []
+        for item in order_items:
+            reproduction = item.nomenclature.type_of_reproduction
+            key = reproduction.hex().upper() if reproduction else 'Вид воспроизводства не выбран'
+
+            items_data.append({
+                'id': item.nomenclature.id,
+                'line_number': item.line_number,
+                'name': item.nomenclature.name,
+                'key': key,
+                'key_material': item.nomenclature.view.hex().upper(),
+                'price': item.price,
+                'amount': item.amount,
+                'quantity': item.quantity,
+                'total': item.sum_total,
+            })
+
+        data = {
+            'number': order.formatted_number(),
+            'date_of_formation': order.date_of_formation.strftime('%d.%m.%Y'),
+            'buyer': order.buyer.description if order.buyer else 'неизвестен',
+            'total': float(order.cost),
+            'items': items_data,
+        }
+
+        cache.set(cache_key, data, timeout=600)  # кэш на 10 минут
+        return JsonResponse(data)
+
+    except OrdersBook.DoesNotExist:
+        return JsonResponse({'error': 'Order not found'}, status=404)
 
 # Спецификации внутри заказа по позиции или список комплектующих (для номенклатуры без СП, т.е. для вида воспроизводства "Покупка" и "Переработка")
 @require_GET # Можно только Get, POST нельзя ) потестим как оно

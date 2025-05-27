@@ -1,9 +1,35 @@
-// Функция для открытия модального окна с содержимым "Заказа покупателя"
-async function toggleOrderModal(row = null) {
+const orderCache = {};
+
+// Универсальная функция-загрузчик (для применения в нескольких функция, чтобы избежать дублирование кода)
+async function fetchOrderDetails(orderId, refresh = false) {
+    if (!refresh && orderCache[orderId]) {
+        return orderCache[orderId]; // используем локальный кэш
+    }
+
+    try {
+        let url = `/orders/orderDetails/${orderId}/`;
+        if (refresh) {
+            url += `?refresh=1&t=${Date.now()}`; // обойти HTTP-кэш
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Ошибка при загрузке данных заказа');
+        const data = await response.json();
+
+        orderCache[orderId] = data; // сохраняем в кэш
+        return data;
+    } catch (error) {
+        console.error('Ошибка загрузки данных заказа:', error);
+        return null;
+    }
+}
+
+// Открытие модального окна с составом "Заказа покупателя"
+async function toggleOrderModal(row = null, orderData = null) {
     const modal = document.getElementById('ordermodal');
     const modalContent = modal.querySelector('div'); // Основной контейнер модального окна
     const closeModalButton = document.getElementById('close-orders-modal');
-    const loader = document.getElementById('loading-spinner');
+    const loaderOpen = document.getElementById('loading-spinner');
 
     const orderId = row.dataset.id;
     modal.dataset.orderId = orderId; // Сохраняем ID заказа в модальном окне
@@ -23,41 +49,69 @@ async function toggleOrderModal(row = null) {
     modalContent.style.transform = 'translate(-50%, 0)';
     modalContent.style.maxHeight = '780px';
 
+    loaderOpen.classList.remove('hidden');
+
+    let data = orderData;
+        if (!data) {
+            data = await fetchOrderDetails(orderId); // запрос делается только если данных нет
+        }
+        if (!data) return;
+
+    document.getElementById('order-number-display').textContent = data.number;
+    document.getElementById('order-date-display').textContent = data.date_of_formation;
+    document.getElementById('order-buyer-display').textContent = data.buyer;
+    document.getElementById('order-total-display').textContent = data.total.toLocaleString('ru-RU');
+
+    // Вкладка "Товары" выбирается по умолчанию
+    const productsTabBtn = document.querySelector('.tab-btn[data-tab="products-tab"]');
+    // Удаляем border-transparent и добавляем border-emerald-500
+    productsTabBtn.classList.remove('border-transparent');
+    productsTabBtn.classList.add('border-emerald-500');
+
+    // Деактивируем остальные вкладки
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.dataset.tab !== "products-tab") {
+            btn.classList.remove('border-emerald-500');
+            btn.classList.add('border-transparent');
+        }
+    });
+
+    productsTabBtn.click(); // Переключаем на вкладку "Товары"
+
+    // loader.classList.remove('hidden');
+    modal.classList.remove('hidden');
+
+    // Обработчики закрытия
+    closeModalButton.addEventListener('click', () => modal.classList.add('hidden'));
+    modal.addEventListener('click', (e) => e.target === modal && modal.classList.add('hidden'));
+    document.addEventListener('keydown', (e) => e.key === 'Escape' && modal.classList.add('hidden'));
+
+    loaderOpen.classList.add('hidden');
+    // Загрузка данных заказа
+    await loadProductTab(orderId, loaderOpen);
+    await loadMaterialsTab(orderId);
+
+}
+
+// Загрузка данных заказа - вкладка "Товары"
+async function loadProductTab(orderId, loaderOpen, orderData = null) {
     try {
-        // Вкладка "Товары" выбирается по умолчанию
-        const productsTabBtn = document.querySelector('.tab-btn[data-tab="products-tab"]');
+        // Загружаем детали заказа
+        // const data = orderData || await fetchOrderDetails(orderId, true);
+        // if (!data) return;
 
-        // Удаляем border-transparent и добавляем border-emerald-500
-        productsTabBtn.classList.remove('border-transparent');
-        productsTabBtn.classList.add('border-emerald-500');
+        let data = orderData;
+        if (!data) {
+            data = await fetchOrderDetails(orderId); // запрос делается только если данных нет
+        }
+        if (!data) return;
 
-        // Деактивируем остальные вкладки
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            if (btn.dataset.tab !== "products-tab") {
-                btn.classList.remove('border-emerald-500');
-                btn.classList.add('border-transparent');
-            }
-        });
 
-        productsTabBtn.click(); // Переключаем на вкладку "Товары"
-
-        loader.classList.remove('hidden');
-        const response = await fetch(`/orders/orderDetails/${orderId}/`);
-        // const response = await fetch(`/orders/orderDetails/${orderId}/?nocache=${Date.now()}`);
-
-        const data = await response.json();
-
-        // Заполнение данных "Шапка"
-        document.getElementById('order-number-display').textContent = data.number;
-        document.getElementById('order-date-display').textContent = data.date_of_formation;
-        document.getElementById('order-buyer-display').textContent = data.buyer;
-        document.getElementById('order-total-display').textContent = data.total.toLocaleString('ru-RU');
-
-        // Заполнение таблицы
+        // Товары
         const tableBody = document.getElementById('order-items-table');
         tableBody.innerHTML = '';
         data.items.forEach(item => {
-            const itemRow = document.createElement('tr');  // переименовано
+            const itemRow = document.createElement('tr');
             itemRow.className = 'cursor-pointer hover:text-emerald-500';
             itemRow.dataset.itemId = item.id;
             itemRow.dataset.itemName = item.name;
@@ -65,47 +119,36 @@ async function toggleOrderModal(row = null) {
             itemRow.dataset.key_material = item.key_material;
             itemRow.innerHTML = `
                 <td class="text-sm px-2 py-1">${item.line_number}</td>
-                <td class="text-sm px-2 py-1">${item.name}</td>                
+                <td class="text-sm px-2 py-1">${item.name}</td>
                 <td class="text-sm px-2 py-1 text-right">${parseFloat(item.quantity).toLocaleString('ru-RU')}</td>
                 <td class="text-sm px-2 py-1 text-right">${parseFloat(item.price).toLocaleString('ru-RU')}</td>
                 <td class="text-sm px-2 py-1 text-right">${parseFloat(item.amount).toLocaleString('ru-RU')}</td>
                 <td class="text-sm px-2 py-1 text-right">${parseFloat(item.total).toLocaleString('ru-RU')}</td>
             `;
             itemRow.addEventListener('click', function () {
-                const itemId = this.dataset.itemId;
-                const itemName = this.dataset.itemName;
-                const key = this.dataset.key;
-                const key_material = this.dataset.key_material;
-                toggleSecondModal(itemId, itemName, key, key_material); // передаётся напрямую
+                const { itemId, itemName, key, key_material } = this.dataset;
+                toggleSecondModal(itemId, itemName, key, key_material);
             });
             tableBody.appendChild(itemRow);
         });
 
-        // Найти и вставить максимальный line_number, если записей нет, то выводим 0
+        // Максимальный номер строки
         const maxLineNumber = data.items.length > 0
             ? Math.max(...data.items.map(item => item.line_number))
             : 0;
-
         document.getElementById('max-line-number').textContent = maxLineNumber;
-        // Запускаем фоновую загрузку материалов
-        loadMaterialsCount(orderId);
 
-        modal.classList.remove('hidden');
+        // Загрузка материалов
+        loadMaterialsCount(orderId);
     } catch (error) {
         console.error('Ошибка:', error);
     } finally {
-        loader.classList.add('hidden');
+        // loaderOpen.classList.add('hidden');
     }
-
-    // Обработчики закрытия
-    closeModalButton.addEventListener('click', () => modal.classList.add('hidden'));
-    modal.addEventListener('click', (e) => e.target === modal && modal.classList.add('hidden'));
-    document.addEventListener('keydown', (e) => e.key === 'Escape' && modal.classList.add('hidden'));
-
 }
 
-// Загрузка и отображение агрегированной номенклатуры во вкладке "Материалы"
-async function loadMaterialsTab(orderId) {
+// Загрузка и отображение агрегированной номенклатуры - вкладка "Материалы"
+async function loadMaterialsTab(orderId, orderData = null) {
     const materialsTabContent = document.getElementById('materials-tab');
     const loader = document.getElementById('materials-loader');
     const table = document.getElementById('materials-table');
@@ -115,14 +158,20 @@ async function loadMaterialsTab(orderId) {
         table.classList.add('hidden');
 
         // Загружаем детали заказа
-        const orderResponse = await fetch(`/orders/orderDetails/${orderId}/`);
-        const orderData = await orderResponse.json();
+        // const data = orderData || await fetchOrderDetails(orderId, true);
+        // if (!data) return;
+
+        let data = orderData;
+        if (!data) {
+            data = await fetchOrderDetails(orderId); // запрос делается только если данных нет
+        }
+        if (!data) return;
 
         // Собираем все спецификации товаров
         const allMaterials = [];
         const materialPromises = [];
 
-        for (const item of orderData.items) {
+        for (const item of data.items) {
             materialPromises.push(
                 fetch(`/orders/specsDetails/${item.id}/?key=${item.key}&key_material=${item.key_material}`)
                     .then(response => response.json())
@@ -168,7 +217,7 @@ async function loadMaterialsTab(orderId) {
 
         // Заполняем таблицу
         const materialsTableBody = document.getElementById('materials-table-body');
-
+        materialsTableBody.innerHTML = '';
         sortedMaterials.forEach((material, index) => {
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -190,6 +239,99 @@ async function loadMaterialsTab(orderId) {
         table.classList.remove('hidden');
     }
 }
+
+// Прелоадер значения количество строк - вкладка "Материалы"
+async function loadMaterialsCount(orderId, orderData = null) {
+    const lineCounter = document.getElementById('materials-line-number');
+
+    try {
+        // Показываем индикатор загрузки
+        lineCounter.textContent = '...';
+
+        // Загружаем детали заказа
+        // const data = await fetchOrderDetails(orderId);
+        // if (!data) return;
+
+        let data = orderData;
+        if (!data) {
+            data = await fetchOrderDetails(orderId); // запрос делается только если данных нет
+        }
+        if (!data) return;
+
+        // Собираем все спецификации товаров
+        const materialPromises = data.items.map(item =>
+            fetch(`/orders/specsDetails/${item.id}/?key=${item.key}&key_material=${item.key_material}`)
+                .then(response => response.json())
+                .catch(() => ({ specs: [] })) // В случае ошибки возвращаем пустой массив
+        );
+
+        const allSpecs = await Promise.all(materialPromises);
+
+        // Считаем уникальные материалы
+        const uniqueMaterials = new Set();
+        allSpecs.forEach(specData => {
+            specData.specs?.forEach(spec => {
+                uniqueMaterials.add(`${spec.name}|${spec.basic_unit}`);
+            });
+        });
+
+        // Обновляем счетчик
+        lineCounter.textContent = uniqueMaterials.size;
+
+    } catch (error) {
+        console.error('Ошибка подсчета материалов:', error);
+        lineCounter.textContent = '0';
+    }
+}
+
+// Вкладки модального окна
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const targetTabId = btn.dataset.tab;
+        const targetContent = document.getElementById(targetTabId);
+
+        // 1. Скрыть ВЕСЬ контент вкладок
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+
+        // 2. Показать только выбранную вкладку
+        targetContent.classList.remove('hidden');
+
+        // 3. Обновить подчеркивание (если ещё не сделано)
+        document.querySelectorAll('.tab-btn').forEach(otherBtn => {
+            otherBtn.classList.remove('border-emerald-500');
+            otherBtn.classList.add('border-transparent');
+        });
+
+        btn.classList.remove('border-transparent');
+        btn.classList.add('border-emerald-500');
+    });
+});
+
+// Обработчик кнопки "Обновить"
+document.getElementById('refresh-order-btn').addEventListener('click', async () => {
+    const orderId = document.getElementById('ordermodal').dataset.orderId;
+    const loader = document.getElementById('loading-spinner');
+    loader.classList.remove('hidden');
+
+    const data = await fetchOrderDetails(orderId, true);
+    if (!data) return;
+
+    // Обновляем "шапку"
+    document.getElementById('order-number-display').textContent = data.number;
+    document.getElementById('order-date-display').textContent = data.date_of_formation;
+    document.getElementById('order-buyer-display').textContent = data.buyer;
+    document.getElementById('order-total-display').textContent = data.total.toLocaleString('ru-RU');
+
+    // Перезагружаем вкладки
+    await loadProductTab(orderId, loader, data);     // передаём данные, если хотим избежать повторного fetch
+    await loadMaterialsTab(orderId, data);           // тоже самое
+    console.log("data.id:", orderId);
+    updateOrderRowInTable(orderId, data);
+
+    loader.classList.add('hidden');
+});
 
 // Функция для открытия модального окна с содержимым "спецификаций номенклатуры"\"список комплектующих"
 async function toggleSecondModal(itemId, itemName, key) {
@@ -249,76 +391,23 @@ async function toggleSecondModal(itemId, itemName, key) {
 
 }
 
-// Обработчик клика по вкладке "Материалы"
-document.querySelector('.tab-btn[data-tab="materials-tab"]').addEventListener('click', function() {
-    const modal = document.getElementById('ordermodal');
-    const orderId = modal.dataset.orderId; // Получаем сохраненный ID заказа
-    const materialsTableBody = document.getElementById('materials-table-body');
+// Для обновления записи, при открытии которой была нажата кнопка "обновить" внутри модального окна
+function updateOrderRowInTable(orderId, data) {
+    const row = document.querySelector(`tr[data-id="${orderId}"]`);
+    if (!row) return;
 
-    if (orderId) {
-        materialsTableBody.innerHTML = '';
-        loadMaterialsTab(orderId);
-    }
-});
+    const cells = row.querySelectorAll('td');
+    if (cells.length < 7) return;
 
-// Прелоадер значения количество строк во вкладке "Материалы"
-async function loadMaterialsCount(orderId) {
-    const lineCounter = document.getElementById('materials-line-number');
+    // Обновляем значения
+    cells[2].textContent = data.number;
+    cells[3].textContent = data.buyer;
+    cells[4].textContent = formatNumber(data.total);
 
-    try {
-        // Показываем индикатор загрузки
-        lineCounter.textContent = '...';
-
-        const orderResponse = await fetch(`/orders/orderDetails/${orderId}/`);
-        const orderData = await orderResponse.json();
-
-        // Собираем все спецификации товаров
-        const materialPromises = orderData.items.map(item =>
-            fetch(`/orders/specsDetails/${item.id}/?key=${item.key}&key_material=${item.key_material}`)
-                .then(response => response.json())
-                .catch(() => ({ specs: [] })) // В случае ошибки возвращаем пустой массив
-        );
-
-        const allSpecs = await Promise.all(materialPromises);
-
-        // Считаем уникальные материалы
-        const uniqueMaterials = new Set();
-        allSpecs.forEach(specData => {
-            specData.specs?.forEach(spec => {
-                uniqueMaterials.add(`${spec.name}|${spec.basic_unit}`);
-            });
-        });
-
-        // Обновляем счетчик
-        lineCounter.textContent = uniqueMaterials.size;
-
-    } catch (error) {
-        console.error('Ошибка подсчета материалов:', error);
-        lineCounter.textContent = '0';
-    }
 }
-
-// Вкладки модального окна
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const targetTabId = btn.dataset.tab;
-        const targetContent = document.getElementById(targetTabId);
-
-        // 1. Скрыть ВЕСЬ контент вкладок
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.add('hidden');
-        });
-
-        // 2. Показать только выбранную вкладку
-        targetContent.classList.remove('hidden');
-
-        // 3. Обновить подчеркивание (если ещё не сделано)
-        document.querySelectorAll('.tab-btn').forEach(otherBtn => {
-            otherBtn.classList.remove('border-emerald-500');
-            otherBtn.classList.add('border-transparent');
-        });
-
-        btn.classList.remove('border-transparent');
-        btn.classList.add('border-emerald-500');
+function formatNumber(value) {
+    return Number(value).toLocaleString('ru-RU', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
     });
-});
+}
