@@ -240,7 +240,7 @@ async function loadMaterialsTab(orderId, orderData = null) {
     }
 }
 
-// Прелоадер значения количество строк - вкладка "Материалы123"
+// Прелоадер значения количество строк - вкладка "Материалы"
 async function loadMaterialsCount(orderId, orderData = null) {
     const lineCounter = document.getElementById('materials-line-number');
 
