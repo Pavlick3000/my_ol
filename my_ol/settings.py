@@ -155,10 +155,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        # "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": config['CACHES_LOCATION_LOCAL'],
         "OPTIONS": {
-            # "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     }
 }
@@ -189,15 +190,4 @@ SESSION_COOKIE_SECURE = False  # Установите True, если испол�
 SESSION_COOKIE_HTTPONLY = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Сессия будет закрыта при закрытии браузера
 SESSION_COOKIE_AGE = 86400  # Время жизни сессии в секундах (сутки)
-
-# CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'  # Адрес Redis
-# CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
-# CELERY_ACCEPT_CONTENT = ['json']
-# CELERY_TASK_SERIALIZER = 'json'
-# CELERY_BEAT_SCHEDULE = {
-#     'check-trigger-log': {
-#         'task': 'orders.tasks.check_cache_triggers',
-#         'schedule': 10.0,  # Проверка каждые 10 сек (можно увеличить)
-#     }
-# }
 

@@ -13,12 +13,17 @@
         <!-- Модальное окно "Детали заказа покупателя" -->
         <div id="ordermodal" class="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center hidden z-50">
             <div class="bg-white p-6 rounded-lg w-max shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out">
+                
+                <!-- Кнопка обновить -->
+                <button id="refresh-order-btn" class="absolute top-3 right-12 p-2">
+                    <img src="{% static 'icons/refresh.ico' %}" alt="Refresh" class="w-4 h-4">
+                </button>
 
                 <!-- Кнопка закрытия -->
                 <button id="close-orders-modal" class="absolute top-2 right-2 p-2">
                     <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
                 </button>
-
+                
                 <!-- Заголовок -->
                 <div class="mb-4">
                     <h2 class="text-xl inline-block relative after:block after:w-full after:h-[1px] after:bg-gray-300 after:absolute after:bottom-0 after:left-0">
@@ -27,9 +32,7 @@
                         <span class="font-normal text-sm ml-2">от</span>
                         <span id="order-date-display" class="font-normal text-sm"></span>
                     </h2>
-                    <div class="flex justify-between items-center mb-4">
-                        <button id="refresh-order-btn" class="text-sm text-blue-500 hover:underline">Обновить</button>
-                    </div>
+
                     <h3 class="text-xl mt-4">
                         <span id="order-buyer-display" class="font-normal text-sm"></span>
                     </h3>
@@ -163,6 +166,9 @@
                         <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
                 </button>
             </div>
+        
+{#            <a href="?clear_cache=true" class="btn btn-danger">Очистить кэш страницы</a>#}
+
 
             <table class="my-table mt-4 w-full" id="ordersTable">
                 <thead>

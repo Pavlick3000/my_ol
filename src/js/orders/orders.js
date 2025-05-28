@@ -327,7 +327,6 @@ document.getElementById('refresh-order-btn').addEventListener('click', async () 
     // Перезагружаем вкладки
     await loadProductTab(orderId, loader, data);     // передаём данные, если хотим избежать повторного fetch
     await loadMaterialsTab(orderId, data);           // тоже самое
-    console.log("data.id:", orderId);
     updateOrderRowInTable(orderId, data);
 
     loader.classList.add('hidden');

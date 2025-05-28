@@ -1,10 +1,12 @@
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
+
 from django.views.decorators.cache import cache_page
 
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET
 from django.core.cache import cache
+
 
 from my_erp.models import NomencBook
 from .models import OrdersBook, SpecList, Inforg23220
@@ -12,7 +14,8 @@ from django.db.models import Q
 
 import traceback
 
-# Заказы
+# "Заказы покупателей"
+@cache_page(20)
 def orders(request):
     search_query = request.GET.get('search', '')
     page_number = request.GET.get('page', 1)
@@ -53,7 +56,7 @@ def orders(request):
         }
     return render(request, 'orders/orders.html', context)
 
-# Детали заказа
+# Детали "Заказа покупателя"
 @require_GET
 def orderDetails(request, id):
     try:
