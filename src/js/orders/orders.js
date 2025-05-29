@@ -14,10 +14,13 @@ async function fetchOrderDetails(orderId, refresh = false) {
 
         const response = await fetch(url);
         if (!response.ok) throw new Error('Ошибка при загрузке данных заказа');
+
         const data = await response.json();
 
         orderCache[orderId] = data; // сохраняем в кэш
         return data;
+        // console.log(result.data);  // ← данные заказа
+        // console.log(result.items_data);
     } catch (error) {
         console.error('Ошибка загрузки данных заказа:', error);
         return null;
@@ -32,6 +35,7 @@ async function toggleOrderModal(row = null, orderData = null) {
     const loaderOpen = document.getElementById('loading-spinner');
 
     const orderId = row.dataset.id;
+
     modal.dataset.orderId = orderId; // Сохраняем ID заказа в модальном окне
 
     // Настройки размеров
@@ -52,8 +56,10 @@ async function toggleOrderModal(row = null, orderData = null) {
     loaderOpen.classList.remove('hidden');
 
     let data = orderData;
+
         if (!data) {
             data = await fetchOrderDetails(orderId); // запрос делается только если данных нет
+            console.log('data:', data);
         }
         if (!data) return;
 
@@ -88,26 +94,16 @@ async function toggleOrderModal(row = null, orderData = null) {
 
     loaderOpen.classList.add('hidden');
     // Загрузка данных заказа
-    await loadProductTab(orderId, loaderOpen);
-    await loadMaterialsTab(orderId);
+    await loadProductTab(orderId, loaderOpen, data);
+    // console.log('[loadMaterialsTab] orderId:', order.id);
+    await loadMaterialsTab(orderId, data);
 
 }
 
 // Загрузка данных заказа - вкладка "Товары"
-async function loadProductTab(orderId, loaderOpen, orderData = null) {
+async function loadProductTab(orderId, loaderOpen, data) {
+
     try {
-        // Загружаем детали заказа
-        // const data = orderData || await fetchOrderDetails(orderId, true);
-        // if (!data) return;
-
-        let data = orderData;
-        if (!data) {
-            data = await fetchOrderDetails(orderId); // запрос делается только если данных нет
-        }
-        if (!data) return;
-
-
-        // Товары
         const tableBody = document.getElementById('order-items-table');
         tableBody.innerHTML = '';
         data.items.forEach(item => {
@@ -117,6 +113,7 @@ async function loadProductTab(orderId, loaderOpen, orderData = null) {
             itemRow.dataset.itemName = item.name;
             itemRow.dataset.key = item.key;
             itemRow.dataset.key_material = item.key_material;
+            itemRow.dataset.id_for_filter_material = item.id_for_filter_material;
             itemRow.innerHTML = `
                 <td class="text-sm px-2 py-1">${item.line_number}</td>
                 <td class="text-sm px-2 py-1">${item.name}</td>
@@ -139,7 +136,7 @@ async function loadProductTab(orderId, loaderOpen, orderData = null) {
         document.getElementById('max-line-number').textContent = maxLineNumber;
 
         // Загрузка материалов
-        loadMaterialsCount(orderId);
+        loadMaterialsCount(orderId, data);
     } catch (error) {
         console.error('Ошибка:', error);
     } finally {
@@ -147,8 +144,8 @@ async function loadProductTab(orderId, loaderOpen, orderData = null) {
     }
 }
 
-// Загрузка и отображение агрегированной номенклатуры - вкладка "Материалы"
-async function loadMaterialsTab(orderId, orderData = null) {
+// Загрузка и отображение агрегированной номенклатуры - вкладка "Материалы" - мой вариант 280525
+async function loadMaterialsTab(orderId, data) {
     const materialsTabContent = document.getElementById('materials-tab');
     const loader = document.getElementById('materials-loader');
     const table = document.getElementById('materials-table');
@@ -157,23 +154,15 @@ async function loadMaterialsTab(orderId, orderData = null) {
         loader.classList.remove('hidden');
         table.classList.add('hidden');
 
-        // Загружаем детали заказа
-        // const data = orderData || await fetchOrderDetails(orderId, true);
-        // if (!data) return;
-
-        let data = orderData;
-        if (!data) {
-            data = await fetchOrderDetails(orderId); // запрос делается только если данных нет
-        }
-        if (!data) return;
-
         // Собираем все спецификации товаров
         const allMaterials = [];
         const materialPromises = [];
 
+
         for (const item of data.items) {
             materialPromises.push(
-                fetch(`/orders/specsDetails/${item.id}/?key=${item.key}&key_material=${item.key_material}`)
+                fetch(`/orders/specsDetails/${item.id}/?key=${item.key}&key_material=${item.key_material}&id_for_filter_material=${item.id_for_filter_material}`)
+
                     .then(response => response.json())
                     .then(specData => {
                         if (specData.specs && specData.specs.length > 0) {
@@ -241,26 +230,16 @@ async function loadMaterialsTab(orderId, orderData = null) {
 }
 
 // Прелоадер значения количество строк - вкладка "Материалы"
-async function loadMaterialsCount(orderId, orderData = null) {
+async function loadMaterialsCount(orderId, data) {
     const lineCounter = document.getElementById('materials-line-number');
 
     try {
         // Показываем индикатор загрузки
         lineCounter.textContent = '...';
 
-        // Загружаем детали заказа
-        // const data = await fetchOrderDetails(orderId);
-        // if (!data) return;
-
-        let data = orderData;
-        if (!data) {
-            data = await fetchOrderDetails(orderId); // запрос делается только если данных нет
-        }
-        if (!data) return;
-
         // Собираем все спецификации товаров
         const materialPromises = data.items.map(item =>
-            fetch(`/orders/specsDetails/${item.id}/?key=${item.key}&key_material=${item.key_material}`)
+            fetch(`/orders/specsDetails/${item.id}/?key=${item.key}&key_material=${item.key_material}&id_for_filter_material=${item.id_for_filter_material}`)
                 .then(response => response.json())
                 .catch(() => ({ specs: [] })) // В случае ошибки возвращаем пустой массив
         );

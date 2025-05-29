@@ -108,7 +108,7 @@ class RealizationBook(models.Model):
         verbose_name_plural = 'Реализации'  # Множественное число в админке
 
 # Состав "Заказа покупателя"
-class OrderList(models.Model):
+class OrderList(BasicUnitMixin, models.Model):
 
     order = models.ForeignKey( # Связь с OrdersBook (_Document400: Заказы покупателей)
         'OrdersBook',

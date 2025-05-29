@@ -9,7 +9,7 @@ from django.core.cache import cache
 
 
 from my_erp.models import NomencBook
-from .models import OrdersBook, SpecList, Inforg23220
+from .models import OrdersBook, SpecList, Inforg23220, OrderList
 from django.db.models import Q
 
 import traceback
@@ -72,6 +72,7 @@ def orderDetails(request, id):
 
         order = OrdersBook.objects.get(pk=id)
         order_items = order.order_items.select_related('nomenclature').order_by('line_number')
+        print(f"Получен order_items из запроса: {order_items}")
 
         items_data = []
         for item in order_items:
@@ -79,6 +80,7 @@ def orderDetails(request, id):
             key = reproduction.hex().upper() if reproduction else 'Вид воспроизводства не выбран'
 
             items_data.append({
+                'id_for_filter_material': item.id,
                 'id': item.nomenclature.id,
                 'line_number': item.line_number,
                 'name': item.nomenclature.name,
@@ -98,8 +100,12 @@ def orderDetails(request, id):
             'items': items_data,
         }
 
-        cache.set(cache_key, data, timeout=600)  # кэш на 10 минут
+        cache.set(cache_key, data, timeout=1)  # кэш на 10 минут
         return JsonResponse(data)
+        # return JsonResponse({
+        #     'data': data,
+        #     'items_data': items_data,
+        # })
 
     except OrdersBook.DoesNotExist:
         return JsonResponse({'error': 'Order not found'}, status=404)
@@ -116,25 +122,53 @@ def specsDetails(request, itemId):
         material_keys = [
             "BA800CC47A229A2311E6C84091631332",  # Товар
             "BA800CC47A229A2311E6C84091631333"  # Материал
-        ]  # Замените на реальный ключ для материала
+        ]
 
         key = request.GET.get("key", "").strip().upper()
         key_material = request.GET.get("key_material", "").strip().upper()
-        print(f"key_material: {key_material}")
         nomenc = get_object_or_404(NomencBook, pk=itemId)
         db_id = nomenc.db_id
 
         specs_data = []
         title_prefix = ""
 
-        # Если это материал, сразу возвращаем его как единственный элемент в спецификации
+        # моя версия 290525
+        # if key_material in material_keys:
+        #     order_lines = OrderList.objects.filter(nomenclature=db_id)
+        #     for line in order_lines:
+        #         specs_data.append({
+        #             "line_number": line.line_number,
+        #             "name": line.nomenclature.name,
+        #             "quantity": float(line.quantity),
+        #             "basic_unit": line.basic_unit_name
+        #         })
+        #     title_prefix = "Материал"
+        #     return JsonResponse({"specs": specs_data, "title_prefix": title_prefix})
+
+        # тест
+        id_for_filter_material = request.GET.get('id_for_filter_material', '')
+        print(f"Получен itemId из запроса: {id_for_filter_material}")
+
         if key_material in material_keys:
-            specs_data.append({
-                "line_number": 1,
-                "name": nomenc.name,
-                "quantity": 1.0,  # или другое значение по умолчанию/из запроса
-                "basic_unit": nomenc.basic_unit_name if hasattr(nomenc, 'basic_unit_name') else "шт"
-            })
+            order_lines = OrderList.objects.filter(nomenclature=db_id)
+            print(f"Всего записей order_lines по nomenclature={db_id}: {order_lines.count()}")
+
+            if id_for_filter_material:
+                order_lines = order_lines.filter(id=id_for_filter_material)
+                print(f"Фильтрация по id_for_filter_material={id_for_filter_material}, записей осталось: {order_lines.count()}")
+            else:
+                print("itemId не передан, фильтрация по заказу не применяется")
+
+            for line in order_lines:
+                print(
+                    f"Строка заказа: line_number={line.line_number}, name={line.nomenclature.name}, quantity={line.quantity}, basic_unit={line.basic_unit_name}")
+                specs_data.append({
+                    "line_number": line.line_number,
+                    "name": line.nomenclature.name,
+                    "quantity": float(line.quantity),
+                    "basic_unit": line.basic_unit_name
+                })
+
             title_prefix = "Материал"
             return JsonResponse({"specs": specs_data, "title_prefix": title_prefix})
 
