@@ -102,20 +102,17 @@ def orderDetails(request, id):
 
         cache.set(cache_key, data, timeout=1)  # кэш на 10 минут
         return JsonResponse(data)
-        # return JsonResponse({
-        #     'data': data,
-        #     'items_data': items_data,
-        # })
 
     except OrdersBook.DoesNotExist:
         return JsonResponse({'error': 'Order not found'}, status=404)
 
 # Спецификации внутри заказа по позиции или список комплектующих (для номенклатуры без СП, т.е. для вида воспроизводства "Покупка" и "Переработка")
+# Моя версия 300525
 @require_GET # Можно только Get, POST нельзя ) потестим как оно
 def specsDetails(request, itemId):
     try:
         components_keys = [
-            "8A9F19A74BAB45774108C4B1FE652ABF",  # Переработка
+            "96CF67336CF685BA4EFFDD934DCF15E6",  # Принятые в переработку
             "B7E6DB21B73167DF4BB0CD4A7D143950"  # Покупка
         ]
 
@@ -125,6 +122,8 @@ def specsDetails(request, itemId):
         ]
 
         key = request.GET.get("key", "").strip().upper()
+        use_components = key in components_keys
+
         key_material = request.GET.get("key_material", "").strip().upper()
         nomenc = get_object_or_404(NomencBook, pk=itemId)
         db_id = nomenc.db_id
@@ -132,36 +131,12 @@ def specsDetails(request, itemId):
         specs_data = []
         title_prefix = ""
 
-        # моя версия 290525
-        # if key_material in material_keys:
-        #     order_lines = OrderList.objects.filter(nomenclature=db_id)
-        #     for line in order_lines:
-        #         specs_data.append({
-        #             "line_number": line.line_number,
-        #             "name": line.nomenclature.name,
-        #             "quantity": float(line.quantity),
-        #             "basic_unit": line.basic_unit_name
-        #         })
-        #     title_prefix = "Материал"
-        #     return JsonResponse({"specs": specs_data, "title_prefix": title_prefix})
-
-        # тест
-        id_for_filter_material = request.GET.get('id_for_filter_material', '')
-        print(f"Получен itemId из запроса: {id_for_filter_material}")
+        id_for_filter_material = request.GET.get('id_for_filter_material', '') # Получаем значение id_for_filter_material для фильтрации номенклатуры под конкретный заказ
 
         if key_material in material_keys:
-            order_lines = OrderList.objects.filter(nomenclature=db_id)
-            print(f"Всего записей order_lines по nomenclature={db_id}: {order_lines.count()}")
-
-            if id_for_filter_material:
-                order_lines = order_lines.filter(id=id_for_filter_material)
-                print(f"Фильтрация по id_for_filter_material={id_for_filter_material}, записей осталось: {order_lines.count()}")
-            else:
-                print("itemId не передан, фильтрация по заказу не применяется")
+            order_lines = OrderList.objects.filter(id=id_for_filter_material)
 
             for line in order_lines:
-                print(
-                    f"Строка заказа: line_number={line.line_number}, name={line.nomenclature.name}, quantity={line.quantity}, basic_unit={line.basic_unit_name}")
                 specs_data.append({
                     "line_number": line.line_number,
                     "name": line.nomenclature.name,
@@ -170,9 +145,7 @@ def specsDetails(request, itemId):
                 })
 
             title_prefix = "Материал"
-            return JsonResponse({"specs": specs_data, "title_prefix": title_prefix})
-
-        use_components = key in components_keys
+            return JsonResponse({"specs": specs_data, "title_prefix": title_prefix, "use_quantity_multiplier": False})
 
         # Сначала пробуем получить спецификацию
         if not use_components:
@@ -212,3 +185,4 @@ def specsDetails(request, itemId):
     except Exception as e:
         traceback.print_exc()
         return JsonResponse({"error": f"Ошибка сервера: {str(e)}"}, status=500)
+

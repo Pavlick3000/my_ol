@@ -166,11 +166,11 @@ async function loadMaterialsTab(orderId, data) {
                     .then(response => response.json())
                     .then(specData => {
                         if (specData.specs && specData.specs.length > 0) {
-                            const itemQuantity = parseFloat(item.quantity);
+                            const multiplier = specData.use_quantity_multiplier === false ? 1 : parseFloat(item.quantity); // конструкция для умножения на единицу, если попался товар или материал
                             specData.specs.forEach(spec => {
                                 allMaterials.push({
                                     name: spec.name,
-                                    quantity: parseFloat(spec.quantity) * itemQuantity,
+                                    quantity: parseFloat(spec.quantity) * multiplier,
                                     unit: spec.basic_unit
                                 });
                             });
