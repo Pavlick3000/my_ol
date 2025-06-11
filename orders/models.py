@@ -215,7 +215,7 @@ class SpecList(BasicUnitMixin, models.Model):
             для заданной номенклатуры db_id.
         """
 
-        # 1. Получаем запись с максимальным id по переданному db_id
+        # 1. Получаем запись с максимальным id по переданному db_idфыв
         latest_info = InfoRg23775.objects.filter(name_nomenc=db_id).order_by('-id').first()
 
         if not latest_info:

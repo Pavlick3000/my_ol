@@ -97,7 +97,7 @@ async function toggleOrderModal(row = null, orderData = null) {
     await loadProductTab(orderId, loaderOpen, data);
     // console.log('[loadMaterialsTab] orderId:', order.id);
     await loadMaterialsTab(orderId, data);
-
+    await loadSpecsData(orderId);
 }
 
 // Загрузка данных заказа - вкладка "Товары"
@@ -144,7 +144,7 @@ async function loadProductTab(orderId, loaderOpen, data) {
     }
 }
 
-// Загрузка и отображение агрегированной номенклатуры - вкладка "Материалы" - мой вариант 280525
+// Загрузка и отображение агрегированной номенклатуры - вкладка "Материалы"
 async function loadMaterialsTab(orderId, data) {
     const materialsTabContent = document.getElementById('materials-tab');
     const loader = document.getElementById('materials-loader');
@@ -388,4 +388,39 @@ function formatNumber(value) {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2
     });
+}
+
+// Тест подстановки результата прямого SQL запроса
+function loadSpecsData(orderId) {
+    const loader = document.getElementById('specs-loader');
+    const tbody = document.getElementById('specs-table-body');
+
+    loader.classList.remove('hidden');
+    tbody.innerHTML = '';  // Очистка перед новой загрузкой
+
+    fetch(`/orders/specsDetailsSQL/${orderId}/`)
+        .then(response => response.json())
+        .then(data => {
+            loader.classList.add('hidden');
+
+            if (data.specs && data.specs.length > 0) {
+                data.specs.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-2 py-1 text-gray-700">${index + 1}</td>
+                        <td class="px-2 py-1 text-gray-700">${item.name}</td>
+                        <td class="px-2 py-1 text-right text-gray-700">${item.quantity}</td>
+                        <td class="px-2 py-1 text-gray-700">${item.unit}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-400 py-4">Нет данных</td></tr>';
+            }
+        })
+        .catch(error => {
+            loader.classList.add('hidden');
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-red-500 py-4">Ошибка загрузки</td></tr>';
+            console.error('Ошибка загрузки спецификаций:', error);
+        });
 }
