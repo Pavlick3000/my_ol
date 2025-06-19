@@ -11,19 +11,41 @@
         </div>
     
         <!-- Модальное окно "Детали заказа покупателя" -->
-        <div id="ordermodal" class="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center hidden z-50">
-            <div class="bg-white p-6 rounded-lg w-max shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out">
-                
+{#        <div id="ordermodal" class="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center hidden z-40">#}
+{#            <div class="bg-white p-6 rounded-lg w-max shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out">#}
+        <div id="ordermodal" class="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center hidden z-40">
+            <div class="bg-white p-6 rounded-lg w-max shadow-lg shadow-gray-700 relative">
                 <!-- Кнопка обновить -->
-                <button id="refresh-order-btn" class="absolute top-3 right-12 p-2">
-                    <img src="{% static 'icons/refresh.ico' %}" alt="Refresh" class="w-4 h-4">
-                </button>
+                <div class="absolute top-3 right-12 group z-50">
+                    <!-- Кнопка -->
+                    <button id="refresh-order-btn" class="p-2">
+                        <img src="{% static 'icons/refresh.ico' %}" alt="Refresh" class="w-4 h-4">
+                    </button>
+
+                    <!-- Tooltip слева -->
+                    <div class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full mr-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
+                        Обновить
+                    </div>
+                </div>
 
                 <!-- Кнопка закрытия -->
                 <button id="close-orders-modal" class="absolute top-2 right-2 p-2">
                     <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
                 </button>
                 
+                <!-- Кнопка "Стрелка вправо" -->
+                <div class="absolute right-2 top-[80px] group z-50">
+                    <!-- Кнопка с иконкой -->
+                    <button id="right-arrow-btn" class="p-2">
+                        <img src="{% static 'icons/right_arrow.ico' %}" alt="right-open" class="w-6 h-6">
+                    </button>
+
+                    <!-- Tooltip -->
+                    <div class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full mr-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
+                        Список материалов
+                    </div>
+                </div>
+
                 <!-- Заголовок -->
                 <div class="mb-4">
                     <h2 class="text-xl inline-block relative after:block after:w-full after:h-[1px] after:bg-gray-300 after:absolute after:bottom-0 after:left-0">
@@ -41,7 +63,7 @@
                         <span class="font-normal text-sm">₽ с НДС</span>
                     </h3>
                 </div>
-
+                
                 <!-- Вкладки -->
                 <div class="mb-4 border-b border-gray-300 flex space-x-4">
                     <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="products-tab">
@@ -49,20 +71,14 @@
                         (<span id="max-line-number">0</span>)
                     </button>
                     
-                    <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="services-tab">
-                        Услуги
-                    </button>
-                    
                     <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="materials-tab">
-                        Материалы
+                        Состав товаров
                         (<span id="materials-line-number">0</span>)
                     </button>
-
-                    <!-- Новая вкладка -->
-                    <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="specs-tab">
-                        Спецификации
-                    </button>
                     
+                    <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="services-tab">
+                        Услуги
+                    </button>    
                 </div>
 
                 <!-- Контент вкладок -->
@@ -94,6 +110,7 @@
                 
                 <!-- Материалы -->
                 <div class="tab-content hidden" id="materials-tab">
+                    
                     <div class="overflow-y-auto pr-2 scrollbar-custom" style="max-height: 59vh; scrollbar-gutter: stable;">
 
                         <div class="relative min-h-[200px]">
@@ -118,33 +135,7 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Спецификации ТЕСТ -->
-                <div class="tab-content hidden" id="specs-tab">
-                    <div class="overflow-y-auto pr-2 scrollbar-custom" style="max-height: 59vh; scrollbar-gutter: stable;">
-                        <div class="relative min-h-[200px]">
-                            <!-- Лоадер -->
-                            <div id="specs-loader" class="absolute inset-0 flex justify-center items-center bg-white z-10 hidden">
-                                <div class="loader border-4 border-t-transparent border-emerald-500 rounded-full w-12 h-12 animate-spin"></div>
-                            </div>
-
-                            <table id="specs-table" class="my-table w-full">
-                                <thead class="sticky top-0 bg-white">
-                                <tr>
-                                    <th class="w-24 px-2 py-1">Наименование</th>
-                                    <th class="w-10 px-2 py-1 text-right">Количество</th>
-                                    <th class="w-24 px-2 py-1">Категория</th>
-                                    <th class="w-24 px-2 py-1">Родитель категории</th>
-                                    <th class="w-24 px-2 py-1">Верхний уровень категории</th>
-                                </tr>
-                                </thead>
-                                <tbody id="specs-table-body">
-                                <!-- JS вставит строки -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                
             </div>
 
             <div id="modal-inner-loader" class="absolute inset-0 bg-gray-700 bg-opacity-50 flex justify-center items-center z-50 hidden">
@@ -180,6 +171,53 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    
+        <!-- Модальное окно "Материалы" -->
+        <div id="materialModal" class="fixed inset-0 hidden z-50">
+            <div class="absolute bg-white p-6 rounded-lg shadow-lg shadow-gray-700 w-[900px]">
+{#        <div id="materialModal" class="fixed inset-0 flex items-center justify-center hidden z-50">#}
+{#            <div class="bg-white p-6 rounded-lg shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out">#}
+                
+                <!-- Кнопка закрытия -->
+                <button id="close-material-modal" class="absolute top-2 right-2 p-2">
+                    <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
+                </button>
+
+                <!-- Заголовок -->
+                <h2 class="text-xl mb-4">Материалы</h2>
+
+                <div id="category-buttons" class="flex flex-wrap gap-2 mb-6 py-2">
+                    <!-- Кнопки фильтра добавляются тут динамически -->
+                </div>
+
+                <!-- Контейнер с прокруткой только для таблицы -->
+                <div class="overflow-y-auto pr-2 scrollbar-custom mt-4" style="max-height: 605px; scrollbar-gutter: stable;">
+                    <div class="relative min-h-[200px]">
+                        <!-- Лоадер -->
+                        <div id="specs-loader" class="absolute inset-0 flex justify-center items-center bg-white z-10 hidden">
+                            <div class="loader border-4 border-t-transparent border-emerald-500 rounded-full w-12 h-12 animate-spin"></div>
+                        </div>
+
+                        <table id="specs-table" class="my-table w-full min-w-[800px]">
+                            <thead class="sticky top-0 bg-white">
+                            <tr>
+                                <th class="w-10 px-2 py-1">#</th>
+                                <th class="w-24 px-2 py-1">Наименование</th>
+                                <th class="w-10 px-2 py-1">Количество</th>
+                                <th class="w-10 px-2 py-1">Ед.</th>
+                                <th class="w-10 px-2 py-1">Подкатегория</th>
+                                <th class="w-10 px-2 py-1">Категория</th>
+                            </tr>
+                            </thead>
+                            <tbody id="specs-tab-table-body">
+                            <!-- JS вставит строки -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
             </div>
         </div>
     

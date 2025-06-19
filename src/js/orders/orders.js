@@ -1,4 +1,5 @@
 const orderCache = {};
+let fullSpecsData = []; // глобально храним все строки
 
 // Универсальная функция-загрузчик (для применения в нескольких функция, чтобы избежать дублирование кода)
 async function fetchOrderDetails(orderId, refresh = false) {
@@ -39,7 +40,7 @@ async function toggleOrderModal(row = null, orderData = null) {
     modal.dataset.orderId = orderId; // Сохраняем ID заказа в модальном окне
 
     // Настройки размеров
-    const modalHorizontalOffset = '450px';
+    const modalHorizontalOffset = '-450px';
     const modalVerticalOffset = '-380px';
     const modalWidth = '900px';
     const minModalHeight = '350px'; // Минимальная высота модального окна
@@ -89,8 +90,8 @@ async function toggleOrderModal(row = null, orderData = null) {
 
     // Обработчики закрытия
     closeModalButton.addEventListener('click', () => modal.classList.add('hidden'));
-    modal.addEventListener('click', (e) => e.target === modal && modal.classList.add('hidden'));
-    document.addEventListener('keydown', (e) => e.key === 'Escape' && modal.classList.add('hidden'));
+    // modal.addEventListener('click', (e) => e.target === modal && modal.classList.add('hidden'));
+    // document.addEventListener('keydown', (e) => e.key === 'Escape' && modal.classList.add('hidden'));
 
     loaderOpen.classList.add('hidden');
     // Загрузка данных заказа
@@ -99,6 +100,110 @@ async function toggleOrderModal(row = null, orderData = null) {
     await loadMaterialsTab(orderId, data);
     await loadSpecsData(orderId);
 }
+
+// Открытие модального окна с содержимым "спецификаций номенклатуры"\"список комплектующих"
+async function toggleSecondModal(itemId, itemName, key) {
+    const modalSecond = document.getElementById('specsModal');
+    const modalSecondContent = modalSecond.querySelector('div');
+    const closeSecondModalButton = document.getElementById('close-specs-modal');
+    const loader = document.getElementById('modal-inner-loader');
+
+    const modalHorizontalOffset = '460px';
+    const modalVerticalOffset = '-380px';
+    const modalWidth = '900px';
+    const minModalHeight = '300px';
+
+    modalSecondContent.style.width = modalWidth;
+    modalSecondContent.style.minHeight = minModalHeight;
+    modalSecondContent.style.position = 'absolute';
+    modalSecondContent.style.left = `calc(50% + ${modalHorizontalOffset})`;
+    modalSecondContent.style.top = `calc(50% + ${modalVerticalOffset})`;
+    modalSecondContent.style.transform = 'translate(-50%, 0)';
+    modalSecondContent.style.maxHeight = '780px';
+
+    try {
+        loader.classList.remove('hidden');
+        const response = await fetch(`/orders/specsDetails/${itemId}/?key=${key}`);
+        // const response = await fetch(endpoint);
+        const data = await response.json();
+
+        // Заполнение данных "Шапка"
+        const titleElement = document.getElementById('specs-modal-title');
+        titleElement.textContent = `${data.title_prefix}: ${itemName}`;
+
+        // Заполнение таблицы
+        const specsTableBody = document.getElementById('specs-table-body');
+        specsTableBody.innerHTML = '';
+        data.specs.forEach(spec => {
+            const row = document.createElement('tr');
+            row.innerHTML = `                
+                <td class="px-2 py-1 text-center">${spec.line_number}</td>
+                <td class="px-2 py-1">${spec.name}</td>
+                <td class="px-2 py-1 text-center">${parseFloat(spec.quantity).toLocaleString('ru-RU')}</td>
+                <td class="px-2 py-1 text-center">${spec.basic_unit}</td>
+            `;
+            specsTableBody.appendChild(row);
+        });
+
+        modalSecond.classList.remove('hidden');
+
+    } catch (error) {
+        console.error('Ошибка загрузки спецификаций:', error);
+    } finally {
+        loader.classList.add('hidden');
+    }
+
+    closeSecondModalButton.addEventListener('click', () => modalSecond.classList.add('hidden'));
+    modalSecond.addEventListener('click', (e) => e.target === modalSecond && modalSecond.classList.add('hidden'));
+    document.addEventListener('keydown', (e) => e.key === 'Escape' && modalSecond.classList.add('hidden'));
+
+}
+
+// Открытие модального окна с "Материалами"
+async function toggleMaterialModal() {
+  const materialModal = document.getElementById('materialModal');
+  const modalContent = materialModal.querySelector('div');
+
+  // Настройки размеров
+    const modalHorizontalOffset = '460px';
+    const modalVerticalOffset = '-380px';
+    const modalWidth = '900px';
+    const minModalHeight = '350px'; // Минимальная высота модального окна
+
+    // Позиционирование (фиксируем верхнюю границу)
+    modalContent.style.width = modalWidth;
+    modalContent.style.minHeight = minModalHeight; // Устанавливаем минимальную высоту
+    modalContent.style.position = 'absolute';
+    modalContent.style.left = `calc(50% + ${modalHorizontalOffset})`;
+    modalContent.style.top = `calc(50% + ${modalVerticalOffset})`;
+    modalContent.style.transform = 'translate(-50%, 0)';
+    modalContent.style.maxHeight = '780px';
+
+
+  // Активируем модальное окно
+  materialModal.classList.remove('hidden');
+  materialModal.classList.add('pointer-events-none'); // Отключаем события для всего окна
+  modalContent.classList.add('pointer-events-auto'); // Включаем события для содержимого
+}
+
+// Закрытие модального окна с "Материалами"
+function closeMaterialModal() {
+  const materialModal = document.getElementById('materialModal');
+  materialModal.classList.add('hidden');
+  materialModal.classList.remove('pointer-events-none');
+  const modalContent = materialModal.querySelector('div');
+  modalContent.classList.remove('pointer-events-auto');
+}
+
+// Обработчик модального окна с "Материалами"
+document.addEventListener("DOMContentLoaded", function() {
+  // Открытие по кнопке
+  document.getElementById("right-arrow-btn").addEventListener("click", toggleMaterialModal);
+
+  // Закрытие
+  document.getElementById("close-material-modal").addEventListener("click", closeMaterialModal);
+
+});
 
 // Загрузка данных заказа - вкладка "Товары"
 async function loadProductTab(orderId, loaderOpen, data) {
@@ -311,64 +416,6 @@ document.getElementById('refresh-order-btn').addEventListener('click', async () 
     loader.classList.add('hidden');
 });
 
-// Функция для открытия модального окна с содержимым "спецификаций номенклатуры"\"список комплектующих"
-async function toggleSecondModal(itemId, itemName, key) {
-    const modalSecond = document.getElementById('specsModal');
-    const modalSecondContent = modalSecond.querySelector('div');
-    const closeSecondModalButton = document.getElementById('close-specs-modal');
-    const loader = document.getElementById('modal-inner-loader');
-
-    const modalHorizontalOffset = '-460px';
-    const modalVerticalOffset = '-380px';
-    const modalWidth = '900px';
-    const minModalHeight = '300px';
-
-    modalSecondContent.style.width = modalWidth;
-    modalSecondContent.style.minHeight = minModalHeight;
-    modalSecondContent.style.position = 'absolute';
-    modalSecondContent.style.left = `calc(50% + ${modalHorizontalOffset})`;
-    modalSecondContent.style.top = `calc(50% + ${modalVerticalOffset})`;
-    modalSecondContent.style.transform = 'translate(-50%, 0)';
-    modalSecondContent.style.maxHeight = '780px';
-
-    try {
-        loader.classList.remove('hidden');
-        const response = await fetch(`/orders/specsDetails/${itemId}/?key=${key}`);
-        // const response = await fetch(endpoint);
-        const data = await response.json();
-
-        // Заполнение данных "Шапка"
-        const titleElement = document.getElementById('specs-modal-title');
-        titleElement.textContent = `${data.title_prefix}: ${itemName}`;
-
-        // Заполнение таблицы
-        const specsTableBody = document.getElementById('specs-table-body');
-        specsTableBody.innerHTML = '';
-        data.specs.forEach(spec => {
-            const row = document.createElement('tr');
-            row.innerHTML = `                
-                <td class="px-2 py-1 text-center">${spec.line_number}</td>
-                <td class="px-2 py-1">${spec.name}</td>
-                <td class="px-2 py-1 text-center">${parseFloat(spec.quantity).toLocaleString('ru-RU')}</td>
-                <td class="px-2 py-1 text-center">${spec.basic_unit}</td>
-            `;
-            specsTableBody.appendChild(row);
-        });
-
-        modalSecond.classList.remove('hidden');
-
-    } catch (error) {
-        console.error('Ошибка загрузки спецификаций:', error);
-    } finally {
-        loader.classList.add('hidden');
-    }
-
-    closeSecondModalButton.addEventListener('click', () => modalSecond.classList.add('hidden'));
-    modalSecond.addEventListener('click', (e) => e.target === modalSecond && modalSecond.classList.add('hidden'));
-    document.addEventListener('keydown', (e) => e.key === 'Escape' && modalSecond.classList.add('hidden'));
-
-}
-
 // Для обновления записи, при открытии которой была нажата кнопка "обновить" внутри модального окна
 function updateOrderRowInTable(orderId, data) {
     const row = document.querySelector(`tr[data-id="${orderId}"]`);
@@ -390,37 +437,115 @@ function formatNumber(value) {
     });
 }
 
-// Тест подстановки результата прямого SQL запроса
+
+// Запуска обработчиков для отрисовка таблицы и списка фильтров вкладки "Материалы"
 function loadSpecsData(orderId) {
-    const loader = document.getElementById('specs-loader');
-    const tbody = document.getElementById('specs-table-body');
-
-    loader.classList.remove('hidden');
-    tbody.innerHTML = '';  // Очистка перед новой загрузкой
-
     fetch(`/orders/specsDetailsSQL/${orderId}/`)
         .then(response => response.json())
         .then(data => {
-            loader.classList.add('hidden');
-
-            if (data.specs && data.specs.length > 0) {
-                data.specs.forEach((item, index) => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td class="px-2 py-1 text-gray-700">${index + 1}</td>
-                        <td class="px-2 py-1 text-gray-700">${item.name}</td>
-                        <td class="px-2 py-1 text-right text-gray-700">${item.quantity}</td>
-                        <td class="px-2 py-1 text-gray-700">${item.unit}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
-            } else {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-gray-400 py-4">Нет данных</td></tr>';
-            }
+            fullSpecsData = data.data || [];
+            renderSpecsTable(fullSpecsData);
+            renderCategoryDropdown(fullSpecsData, orderId);
         })
-        .catch(error => {
-            loader.classList.add('hidden');
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-red-500 py-4">Ошибка загрузки</td></tr>';
-            console.error('Ошибка загрузки спецификаций:', error);
-        });
+        .catch(error => console.error('Ошибка загрузки данных:', error));
 }
+
+// Отрисовка выпадающего списка во вкладке "Материалы"
+function renderCategoryDropdown(data, orderId) {
+    const container = document.getElementById('category-buttons');
+    container.innerHTML = '';
+
+    const uniqueCategories = [...new Set(data.map(item => item.CategoryName).filter(Boolean))];
+
+    // Обёртка с относительным позиционированием
+    const wrapper = document.createElement('div');
+    wrapper.className = 'relative inline-block text-left z-50'; // z-50 для приоритета
+
+    // Кнопка для открытия списка
+    const button = document.createElement('button');
+    button.textContent = 'Категория';
+    button.className = 'inline-flex justify-center w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50';
+    button.id = 'dropdown-button';
+
+    // Выпадающее меню
+    const menu = document.createElement('div');
+    menu.className = `
+    absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5
+    hidden transition-opacity duration-150 overflow-y-auto scrollbar-custom
+`;
+    function adjustDropdownHeight() {
+    const rect = button.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom - 95; // отступ от края
+    menu.style.maxHeight = `${spaceBelow}px`;
+}
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute('aria-orientation', 'vertical');
+    menu.setAttribute('aria-labelledby', 'dropdown-button');
+
+    // Опция "Все"
+    const allOption = document.createElement('a');
+    allOption.href = '#';
+    allOption.textContent = 'Все';
+    allOption.className = 'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100';
+    allOption.onclick = (e) => {
+        e.preventDefault();
+        renderSpecsTable(fullSpecsData);
+        menu.classList.add('hidden');
+    };
+    menu.appendChild(allOption);
+
+    // Остальные категории
+    uniqueCategories.forEach(category => {
+        const item = document.createElement('a');
+        item.href = '#';
+        item.textContent = category;
+        item.className = 'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100';
+        item.onclick = (e) => {
+            e.preventDefault();
+            const filtered = fullSpecsData.filter(row => row.CategoryName === category);
+            renderSpecsTable(filtered);
+            menu.classList.add('hidden');
+        };
+        menu.appendChild(item);
+    });
+
+    // Открытие/закрытие
+    button.onclick = (e) => {
+        e.preventDefault();
+        adjustDropdownHeight();
+        menu.classList.toggle('hidden');
+    };
+
+    // Закрытие по клику вне
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) {
+            menu.classList.add('hidden');
+        }
+    });
+
+    wrapper.appendChild(button);
+    wrapper.appendChild(menu);
+    container.appendChild(wrapper);
+}
+
+// Отрисовка таблицы во вкладке "Материалы"
+function renderSpecsTable(data) {
+    const tableBody = document.getElementById('specs-tab-table-body');
+    tableBody.innerHTML = '';
+
+    data.forEach((row, index)=> {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="text-sm px-2 py-1 text-gray-700 text-center">${index + 1}</td>
+            <td class="text-sm px-2 py-1 text-gray-700">${row.ComponentName}</td>
+            <td class="text-sm px-2 py-1 text-center">${parseFloat(row.TotalQuantity)}</td>
+            <td class="text-sm px-2 py-1 text-center">${row.basic_unit}</td>
+            <td class="text-sm px-2 py-1 text-gray-700 text-center">${row.CategoryName}</td>
+            <td class="text-sm px-2 py-1 text-gray-700 text-center">${row.CategoryParentName}</td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
+
+
+
