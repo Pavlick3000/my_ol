@@ -7,16 +7,15 @@ from django.views.decorators.cache import cache_page
 from django.views.decorators.http import require_GET
 from django.core.cache import cache
 
-
 from my_erp.models import NomencBook
 from .models import OrdersBook, SpecList, Inforg23220, OrderList
 from django.db.models import Q
 
-from django.db import connection
 import traceback
 
+from src.py.utils import get_specs_tree, group_children
 
-# "Заказы покупателей"
+# "Заказы покупателей" - отображаем все заказы
 @cache_page(20)
 def orders(request):
     search_query = request.GET.get('search', '')
@@ -58,7 +57,7 @@ def orders(request):
         }
     return render(request, 'orders/orders.html', context)
 
-# Детали "Заказа покупателя"
+# Детали "Заказа покупателя" - отображаем, что внутри выбранного заказа
 @require_GET
 def orderDetails(request, id):
     try:
@@ -74,7 +73,7 @@ def orderDetails(request, id):
 
         order = OrdersBook.objects.get(pk=id)
         order_items = order.order_items.select_related('nomenclature').order_by('line_number')
-        print(f"Получен order_items из запроса: {order_items}")
+        # print(f"Получен order_items из запроса: {order_items}")
 
         items_data = []
         for item in order_items:
@@ -187,42 +186,58 @@ def specsDetails(request, itemId):
         traceback.print_exc()
         return JsonResponse({"error": f"Ошибка сервера: {str(e)}"}, status=500)
 
-# Рабочее 160625
-# @require_GET
-# def specsDetailsSQL(request, orderId):
-#     try:
-#         with connection.cursor() as cursor:
-#             cursor.execute("EXEC GetSpecsDetailsByOrderId %s", [orderId]) # запускаем хранимую процедуру
-#             if cursor.description is None:
-#                 return JsonResponse({"specs": []})
-#             columns = [col[0] for col in cursor.description]
-#             rows = cursor.fetchall()
-#
-#         data = [dict(zip(columns, row)) for row in rows]
-#         return JsonResponse({"specs": data})
-#
-#     except Exception as e:
-#         traceback.print_exc()
-#         return JsonResponse({"error": f"Ошибка сервера: {str(e)}"}, status=500)
-
+# Это старый вызов процедуры - пока оставлю на всякий случай
 @require_GET
 def specsDetailsSQL(request, orderId):
     try:
-        category_filter = request.GET.get('category')
-        with connection.cursor() as cursor:
-            cursor.execute("EXEC GetSpecsDetailsByOrderId %s", [orderId])
-            columns = [col[0] for col in cursor.description]
-            rows = cursor.fetchall()
-            data = [dict(zip(columns, row)) for row in rows]
+        data = get_specs_tree(orderId)
+        return JsonResponse({
+            'success': True,
+            'count': len(data),
+            'data': data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }, status=500)
 
-        # если категория указана — фильтруем
-        if category_filter:
-            data = [row for row in data if row.get('CategoryName') == category_filter]
 
-        return JsonResponse({'data': data})
+# Вызов SQL процедуры, передаем ID заказа и ID номенклатуры для фильтрации
+def get_spec_tree_by_item(request, orderId, itemId):
+    try:
+        full_tree = get_specs_tree(orderId, itemId)
+        raw_subtree = find_spec_subtree_by_item_id(full_tree, itemId)
+
+        if not raw_subtree:
+            print("Поддерево не найдено")
+
+        # Группируем поддерево
+        grouped_subtree = group_children(raw_subtree)
+
+        return JsonResponse({'items': grouped_subtree})
 
     except Exception as e:
+        print(f"Ошибка: {e}")
         return JsonResponse({'error': str(e)}, status=500)
+
+# Возвращает список дочерних элементов по указанному ID номенклатуры
+def find_spec_subtree_by_item_id(tree, itemId, level=0):
+    # indent = '  ' * level # Для отступов
+    for node in tree:
+        if node.get('ComponentDbId') == itemId:
+            return node.get('children', [])
+
+        children = node.get('children', [])
+        if children:
+            result = find_spec_subtree_by_item_id(children, itemId, level + 1)
+            if result:
+                return result
+    return []
+
+
+
 
 
 

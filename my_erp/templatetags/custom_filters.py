@@ -9,6 +9,15 @@ def dict_get(dictionary, key):
     return dictionary.get(key, "Не найдено")
 
 @register.filter
+def tailwind_indent(level):
+    try:
+        level = int(level)
+    except (ValueError, TypeError):
+        return ""
+    spacing = min(level * 4, 48)  # Ограничим отступ, если уровень будет > 12
+    return f"ml-{spacing}"
+
+@register.filter
 def format_qnt(value):
     """Фильтр для форматирования qnt как в JavaScript с разделением на тысячи"""
     if value is None:

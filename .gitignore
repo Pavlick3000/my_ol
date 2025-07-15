@@ -4,6 +4,7 @@ __pycache__
 ./venv
 .DS_Store
 .env
+.json
 .idea/
 Different_tests/
 /node_modules/

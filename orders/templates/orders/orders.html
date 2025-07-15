@@ -11,40 +11,13 @@
         </div>
     
         <!-- Модальное окно "Детали заказа покупателя" -->
-{#        <div id="ordermodal" class="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center hidden z-40">#}
-{#            <div class="bg-white p-6 rounded-lg w-max shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out">#}
         <div id="ordermodal" class="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center hidden z-40">
             <div class="bg-white p-6 rounded-lg w-max shadow-lg shadow-gray-700 relative">
-                <!-- Кнопка обновить -->
-                <div class="absolute top-3 right-12 group z-50">
-                    <!-- Кнопка -->
-                    <button id="refresh-order-btn" class="p-2">
-                        <img src="{% static 'icons/refresh.ico' %}" alt="Refresh" class="w-4 h-4">
-                    </button>
-
-                    <!-- Tooltip слева -->
-                    <div class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full mr-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
-                        Обновить
-                    </div>
-                </div>
 
                 <!-- Кнопка закрытия -->
                 <button id="close-orders-modal" class="absolute top-2 right-2 p-2">
                     <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
                 </button>
-                
-                <!-- Кнопка "Стрелка вправо" -->
-                <div class="absolute right-2 top-[80px] group z-50">
-                    <!-- Кнопка с иконкой -->
-                    <button id="right-arrow-btn" class="p-2">
-                        <img src="{% static 'icons/right_arrow.ico' %}" alt="right-open" class="w-6 h-6">
-                    </button>
-
-                    <!-- Tooltip -->
-                    <div class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-full mr-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
-                        Список материалов
-                    </div>
-                </div>
 
                 <!-- Заголовок -->
                 <div class="mb-4">
@@ -63,22 +36,22 @@
                         <span class="font-normal text-sm">₽ с НДС</span>
                     </h3>
                 </div>
-                
+
                 <!-- Вкладки -->
                 <div class="mb-4 border-b border-gray-300 flex space-x-4">
                     <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="products-tab">
                         Товары 
                         (<span id="max-line-number">0</span>)
                     </button>
-                    
+
                     <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="materials-tab">
-                        Состав товаров
-                        (<span id="materials-line-number">0</span>)
+                        Состав
+{#                        (<span id="materials-line-number">0</span>)#}
                     </button>
-                    
+
                     <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="services-tab">
                         Услуги
-                    </button>    
+                    </button>
                 </div>
 
                 <!-- Контент вкладок -->
@@ -88,12 +61,18 @@
                         <table class="my-table w-full">
                             <thead class="sticky top-0 bg-white">
                             <tr>
+                                <th class="w-2 px-2 py-1">id</th>
                                 <th class="w-2 px-2 py-1">#</th>
                                 <th class="w-24 px-2 py-1">Наименование</th>
                                 <th class="w-10 px-2 py-1 text-right">Кол-во</th>
                                 <th class="w-10 px-2 py-1 text-right">Цена</th>
                                 <th class="w-10 px-2 py-1 text-right">Сумма</th>
                                 <th class="w-10 px-2 py-1 text-right">Сумма с НДС</th>
+                            </tr>
+                            <tr class="spec-row hidden" id="spec-for-{{ item.id }}">
+                                <td colspan="5">
+                                    <div class="spec-container" id="spec-container-{{ item.id }}"></div>
+                                </td>
                             </tr>
                             </thead>
                             <tbody id="order-items-table">
@@ -110,32 +89,11 @@
                 
                 <!-- Материалы -->
                 <div class="tab-content hidden" id="materials-tab">
-                    
-                    <div class="overflow-y-auto pr-2 scrollbar-custom" style="max-height: 59vh; scrollbar-gutter: stable;">
 
-                        <div class="relative min-h-[200px]">
-                            <!-- Лоадер вместо таблицы -->
-                            <div id="materials-loader" class="absolute inset-0 flex justify-center items-center bg-white z-10">
-                                <div class="loader border-4 border-t-transparent border-emerald-500 rounded-full w-12 h-12 animate-spin"></div>
-                            </div>
+                    <div id="specs-tree-container" class="p-4 max-h-[600px] overflow-y-auto"></div>
 
-                            <table id="materials-table" class="my-table w-full">
-                                <thead class="sticky top-0 bg-white">
-                                <tr>
-                                    <th class="w-2 px-2 py-1">#</th>
-                                    <th class="w-24 px-2 py-1">Наименование</th>
-                                    <th class="w-10 px-2 py-1 text-right">Кол-во</th>
-                                    <th class="w-10 px-2 py-1">Ед.</th>
-                                </tr>
-                                </thead>
-                                <tbody id="materials-table-body">
-                                <!-- JS вставит строки -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 </div>
-                
+
             </div>
 
             <div id="modal-inner-loader" class="absolute inset-0 bg-gray-700 bg-opacity-50 flex justify-center items-center z-50 hidden">
@@ -153,33 +111,57 @@
                 </button>
 
                 <!-- Заголовок -->
-                <h2 class="text-xl mb-4" id="specs-modal-title">Спецификация</h2>
+{#                <h2 class="text-xl mb-4" id="specs-modal-title">Спецификация</h2>#}
+                <h2 class="text-xl mb-4" id="specs-modal-title"></h2>
 
-                <!-- Таблица -->
-                <div class="overflow-y-auto pr-2 scrollbar-custom" style="max-height: 73vh; scrollbar-gutter: stable;">
-                    <table class="my-table w-full text-sm">
-                        <thead class="sticky top-0 bg-white">
-                        <tr>
-                            <th class="w-2 px-2 py-1">#</th>
-                            <th class="w-32 px-2 py-1">Наименование</th>
-                            <th class="w-10 px-2 py-1">Кол-во</th>
-                            <th class="w-10 px-2 py-1">Ед.</th>
-                        </tr>
-                        </thead>
-                        <tbody id="specs-table-body">
-                        <!-- JS вставит строки -->
-                        </tbody>
-                    </table>
+                <!-- Вкладки -->
+                <div class="mb-4 border-b border-gray-300 flex space-x-4">
+                    <button type="button" class="second-tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="second-products-tab">
+                        Состав
+{#                        (<span id="max-line-number">0</span>)#}
+                    </button>
+
+                    <button type="button" class="second-tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="second-materials-tab">
+                        Материалы
+{#                        (<span id="materials-line-number">0</span>)#}
+                    </button>
+
                 </div>
+
+                <!-- Контент вкладок -->
+                <!-- Состав -->
+                <div class="second-tab-content" id="second-products-tab">
+                    <div class="overflow-y-auto pr-2 scrollbar-custom" style="max-height: 73vh; scrollbar-gutter: stable;">
+                        <table class="my-table w-full text-sm">
+                            <thead class="sticky top-0 bg-white">
+                            <tr>
+                                <th class="w-2 px-2 py-1">#</th>
+                                <th class="w-32 px-2 py-1">Наименование</th>
+                                <th class="w-10 px-2 py-1">Кол-во</th>
+                                <th class="w-10 px-2 py-1">Ед.</th>
+                            </tr>
+                            </thead>
+                            <tbody id="specs-table-body">
+                            <!-- JS вставит строки -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Материалы -->
+                <div class="second-tab-content hidden" id="second-materials-tab">
+                    <p class="text-sm text-gray-500">Здесь будут...</p>
+                </div>
+
             </div>
         </div>
-    
+
         <!-- Модальное окно "Материалы" -->
         <div id="materialModal" class="fixed inset-0 hidden z-50">
             <div class="absolute bg-white p-6 rounded-lg shadow-lg shadow-gray-700 w-[900px]">
 {#        <div id="materialModal" class="fixed inset-0 flex items-center justify-center hidden z-50">#}
 {#            <div class="bg-white p-6 rounded-lg shadow-lg shadow-gray-700 relative transition-all duration-300 ease-in-out">#}
-                
+
                 <!-- Кнопка закрытия -->
                 <button id="close-material-modal" class="absolute top-2 right-2 p-2">
                     <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
@@ -217,7 +199,7 @@
                         </table>
                     </div>
                 </div>
-                
+
             </div>
         </div>
     
