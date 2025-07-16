@@ -50,6 +50,8 @@ def get_specs_tree(orderId, itemId=None):
            not any(k[0] == node.get('ParentID') and node['Path'].startswith(k[2]) for k in nodes)
     ]
 
+    sort_tree(root_items)  # Сортировка дерева
+
     return root_items
 
 # Группировка внутри дерева
@@ -96,3 +98,14 @@ def group_children(items):
 
     return result
 
+# Сортировка дерева
+def sort_tree(items):
+    items.sort(
+        key=lambda x: (
+            len(x['children']) == 0,        # Сначала с детьми, потом без
+            x.get('ComponentName', '').lower()  # Алфавитная сортировка, без учёта регистра
+        )
+    )
+    for item in items:
+        if item['children']:
+            sort_tree(item['children'])

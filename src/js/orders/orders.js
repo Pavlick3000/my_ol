@@ -154,7 +154,7 @@ async function loadProductTab(orderId, loaderOpen, data) {
             itemRow.dataset.key_material = item.key_material;
             itemRow.dataset.id_for_filter_material = item.id_for_filter_material;
             itemRow.innerHTML = `
-                <td class="text-sm px-2 py-1 text-center">${item.id}</td>
+<!--                <td class="text-sm px-2 py-1 text-center">${item.id}</td>-->
                 <td class="text-sm px-2 py-1 text-center">${item.line_number}</td>
                 <td class="text-sm px-2 py-1">${item.name}</td>
                 <td class="text-sm px-2 py-1 text-right">${parseFloat(item.quantity).toLocaleString('ru-RU')}</td>
@@ -236,8 +236,23 @@ async function loadSpecsForItem(orderId, itemId) {
     }
 }
 
-// Отрисовка дерева
-async function renderSpecTree(items, parentElement, level = 0) {
+// Отрисовка дерева - работает
+async function renderSpecTree(items, parentElement, level = 0, options = {}) {
+    const defaultOptions = {
+        baseIndent: 0,          // Базовый отступ в пикселях
+        indentMultiplier: 1,     // Множитель отступа для каждого уровня
+        indentUnit: 'px',        // Единица измерения отступа
+        showToggle: true,        // Показывать кнопки раскрытия/сворачивания
+        toggleClosed: '▸',       // Иконка закрытого состояния
+        toggleOpen: '▾',         // Иконка открытого состояния
+        toggleSize: '10px',      // Размер placeholder/кнопки
+        itemClass: '',           // Дополнительные классы для элементов
+        containerClass: '',      // Дополнительные классы для контейнеров
+        treeOffset: 22           // Отступ всего дерева
+    };
+
+    options = { ...defaultOptions, ...options };
+
     if (!items || items.length === 0) {
         const p = document.createElement('p');
         p.className = 'text-gray-500 text-sm italic';
@@ -246,38 +261,37 @@ async function renderSpecTree(items, parentElement, level = 0) {
         return;
     }
 
-    const ul = document.createElement('ul');
-    ul.className = 'space-y-2';
+    const container = document.createElement('div');
+    container.className = `${options.containerClass}`.trim();
+    container.style.marginLeft = `${options.treeOffset}${options.indentUnit}`;
 
     items.forEach(item => {
-        const li = document.createElement('li');
-        li.className = 'spec-node';
+        const nodeWrapper = document.createElement('div');
+        nodeWrapper.className = `spec-node ${options.itemClass}`.trim();
 
-        const div = document.createElement('div');
-        div.className = `ml-${level * 4} text-xs bg-gray-50 flex justify-between p-1 rounded`;
+        const node = document.createElement('div');
+        node.className = 'text-xs bg-gray-50 flex justify-between p-1 rounded';
+        node.style.paddingLeft = `${level * options.baseIndent * options.indentMultiplier}${options.indentUnit}`;
 
         const spanLeft = document.createElement('span');
         spanLeft.className = 'flex items-center gap-2';
 
-        if (item.children && item.children.length > 0) {
+        if (item.children && item.children.length > 0 && options.showToggle) {
             const toggleBtn = document.createElement('button');
             toggleBtn.className = 'toggle-node text-emerald-600 hover:text-emerald-800';
             toggleBtn.type = 'button';
-            toggleBtn.textContent = '▸';
+            toggleBtn.textContent = options.toggleClosed;
+            toggleBtn.style.width = options.toggleSize;
+            toggleBtn.style.minWidth = options.toggleSize;
             toggleBtn.onclick = () => {
-                const childrenContainer = li.querySelector('.children-container');
-                if (childrenContainer.classList.contains('hidden')) {
-                    childrenContainer.classList.remove('hidden');
-                    toggleBtn.textContent = '▾';
-                } else {
-                    childrenContainer.classList.add('hidden');
-                    toggleBtn.textContent = '▸';
-                }
+                childrenContainer.classList.toggle('hidden');
+                toggleBtn.textContent = childrenContainer.classList.contains('hidden') ? options.toggleClosed : options.toggleOpen;
             };
             spanLeft.appendChild(toggleBtn);
-        } else {
+        } else if (options.showToggle) {
             const placeholder = document.createElement('span');
-            placeholder.className = 'inline-block w-4';
+            placeholder.style.width = options.toggleSize;
+            placeholder.style.minWidth = options.toggleSize;
             spanLeft.appendChild(placeholder);
         }
 
@@ -285,28 +299,29 @@ async function renderSpecTree(items, parentElement, level = 0) {
         nameSpan.textContent = item.ComponentName || '(без названия)';
         spanLeft.appendChild(nameSpan);
 
-        const rightSpan = document.createElement('span');
-        rightSpan.className = 'text-right text-xs text-gray-600';
-        rightSpan.textContent = `${parseFloat(item.TotalQuantity)} ${item.basic_unit || ''}`;
+        const spanRight = document.createElement('span');
+        spanRight.className = 'text-right text-xs text-gray-600';
+        spanRight.textContent = `${parseFloat(item.TotalQuantity)} ${item.basic_unit || ''}`;
 
-        div.appendChild(spanLeft);
-        div.appendChild(rightSpan);
-        li.appendChild(div);
+        node.appendChild(spanLeft);
+        node.appendChild(spanRight);
+        nodeWrapper.appendChild(node);
 
+        let childrenContainer = null;
         if (item.children && item.children.length > 0) {
-            const childrenDiv = document.createElement('div');
-            childrenDiv.className = 'children-container ml-4 hidden';
-            renderSpecTree(item.children, childrenDiv, level + 1);
-            li.appendChild(childrenDiv);
+            childrenContainer = document.createElement('div');
+            childrenContainer.className = 'children-container hidden';
+            childrenContainer.style.margin = '0';
+            childrenContainer.style.padding = '0';
+            renderSpecTree(item.children, childrenContainer, level + 1, options);
+            nodeWrapper.appendChild(childrenContainer);
         }
 
-        ul.appendChild(li);
+        container.appendChild(nodeWrapper);
     });
 
-    parentElement.appendChild(ul);
+    parentElement.appendChild(container);
 }
-
-
 
 
 
