@@ -1,64 +1,19 @@
 from collections import defaultdict
 from django.db import connection
 
-# Группировка внутри дерева
-def group_children(items):
-    grouped = defaultdict(lambda: {
-        'TotalQuantity': 0,
-        'children': [],
-        'items': []
-    })
-
-    for item in items:
-        key = (item['ComponentName'], item['basic_unit'])
-        grouped_item = grouped[key]
-
-        grouped_item['ComponentName'] = item['ComponentName']
-        grouped_item['basic_unit'] = item['basic_unit']
-        grouped_item['Level'] = item.get('Level', 0)
-        grouped_item['CategoryName'] = item.get('CategoryName')
-        grouped_item['CategoryParentName'] = item.get('CategoryParentName')
-        grouped_item['CategoryGrandParentName'] = item.get('CategoryGrandParentName')
-        grouped_item['TotalQuantity'] += item.get('TotalQuantity', 0)
-
-        # Ключевые поля (один раз)
-        if 'ComponentID' not in grouped_item:
-            grouped_item['ComponentID'] = item.get('ComponentID')
-        if 'ComponentDbId' not in grouped_item:
-            grouped_item['ComponentDbId'] = item.get('ComponentDbId')
-        if 'OrderItemID' not in grouped_item:
-            grouped_item['OrderItemID'] = item.get('OrderItemID')
-        if 'ParentID' not in grouped_item:
-            grouped_item['ParentID'] = item.get('ParentID')
-
-        # Дети
-        grouped_item['children'].extend(item.get('children', []))
-
-    # Рекурсивная группировка
-    result = []
-    for val in grouped.values():
-        val['children'] = group_children(val['children'])
-        result.append(val)
-
-    return result
-
 # Получаем дерево из SQL процедуры
 def get_specs_tree(orderId, itemId=None):
     with connection.cursor() as cursor:
-        # Проверка существования заказа
         cursor.execute("SELECT TOP 1 _IDRRef FROM _Document400 WHERE id = %s", [orderId])
         order_data = cursor.fetchone()
         if not order_data:
             raise Exception(f"Заказ {orderId} не найден")
 
-        # Выполнение хранимой процедуры
         cursor.execute("EXEC GetSpecsDetailsByOrderId %s, NULL, %s", [orderId, itemId])
-
         if not cursor.description:
             return []
 
         columns = [col[0] for col in cursor.description]
-
         result = []
         raw_rows = cursor.fetchall()
 
@@ -70,28 +25,74 @@ def get_specs_tree(orderId, itemId=None):
             item['children'] = []
             result.append(item)
 
-    # Построение иерархии
-    from collections import defaultdict
-    children_map = defaultdict(list)
-    id_to_items = defaultdict(list)
+    nodes = { (item['ComponentID'], item.get('ParentID'), item['Path']) : item for item in result }
 
-    for item in result:
-        component_id = item['ComponentID']
-        parent_id = item.get('ParentID')
-        id_to_items[component_id].append(item)
+    # Для оптимизации создадим индекс по ComponentID к ключам
+    parent_index = defaultdict(list)
+    for key in nodes:
+        parent_index[key[0]].append(key)
 
+    for key, node in nodes.items():
+        parent_id = node.get('ParentID')
         if parent_id:
-            children_map[parent_id].append(item)
+            possible_parents = parent_index.get(parent_id, [])
+            parent_key = None
+            for pk in possible_parents:
+                if node['Path'].startswith(pk[2]):
+                    parent_key = pk
+                    break
+            if parent_key:
+                nodes[parent_key]['children'].append(node)
 
-    for parent_id, children in children_map.items():
-        parent_items = id_to_items.get(parent_id, [])
-        for parent_item in parent_items:
-            parent_item['children'].extend(children)
-
-    # Поиск корневых элементов
-    root_items = [item for item in result if not item.get('ParentID') or item['ParentID'] not in id_to_items]
+    root_items = [
+        node for key, node in nodes.items()
+        if not node.get('ParentID') or
+           not any(k[0] == node.get('ParentID') and node['Path'].startswith(k[2]) for k in nodes)
+    ]
 
     return root_items
 
+# Группировка внутри дерева
+def group_children(items):
+    grouped = defaultdict(lambda: {
+        'TotalQuantity': 0,
+        'children': [],
+        'items': [],
+        'ComponentName': None,
+        'basic_unit': None,
+        'Level': 0,
+        'CategoryName': None,
+        'CategoryParentName': None,
+        'CategoryGrandParentName': None,
+        'ComponentID': None,
+        'ComponentDbId': None,
+        'OrderItemID': None,
+        'ParentID': None,
+        'Path': None,
+    })
 
+    for item in items:
+        key = (item['ComponentID'], item['ParentID'], item['Path'])
+
+        grouped_item = grouped[key]
+
+        # Обновляем поля (сохраняем первый попавшийся ненулевой вариант)
+        for field in ['ComponentName', 'basic_unit', 'Level', 'CategoryName', 'CategoryParentName', 'CategoryGrandParentName']:
+            if grouped_item[field] is None:
+                grouped_item[field] = item.get(field)
+
+        grouped_item['TotalQuantity'] += item.get('TotalQuantity', 0)
+
+        for field in ['ComponentID', 'ComponentDbId', 'OrderItemID', 'ParentID', 'Path']:
+            if grouped_item[field] is None:
+                grouped_item[field] = item.get(field)
+
+        grouped_item['children'].extend(item.get('children', []))
+
+    result = []
+    for val in grouped.values():
+        val['children'] = group_children(val['children'])
+        result.append(val)
+
+    return result
 
