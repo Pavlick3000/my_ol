@@ -27,7 +27,7 @@ async function fetchOrderDetails(orderId, refresh = false) {
     }
 }
 
-// Вкладки модального окна
+// Вкладки модального окна - левая колонка
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const targetTabId = btn.dataset.tab;
@@ -52,6 +52,31 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
+// Вкладки модального окна - правая колонка
+document.querySelectorAll('.second-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const targetTabId = btn.dataset.tab;
+        const targetContent = document.getElementById(targetTabId);
+
+        // 1. Скрыть ВЕСЬ контент вкладок
+        document.querySelectorAll('.second-tab-content').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+
+        // 2. Показать только выбранную вкладку
+        targetContent.classList.remove('hidden');
+
+        // 3. Обновить подчеркивание (если ещё не сделано)
+        document.querySelectorAll('.second-tab-btn').forEach(otherBtn => {
+            otherBtn.classList.remove('border-emerald-500');
+            otherBtn.classList.add('border-transparent');
+        });
+
+        btn.classList.remove('border-transparent');
+        btn.classList.add('border-emerald-500');
+    });
+});
+
 // Открытие модального окна с составом "Заказа покупателя"
 async function toggleOrderModal(row = null, orderData = null) {
 
@@ -67,7 +92,7 @@ async function toggleOrderModal(row = null, orderData = null) {
     // Настройки размеров
     // const modalHorizontalOffset = '-450px';
     const modalVerticalOffset = '-380px';
-    const modalWidth = '900px';
+    const modalWidth = '1520px';
     const minModalHeight = '350px'; // Минимальная высота модального окна
 
     // Позиционирование (фиксируем верхнюю границу)
@@ -95,9 +120,9 @@ async function toggleOrderModal(row = null, orderData = null) {
     document.getElementById('order-buyer-display').textContent = data.buyer;
     document.getElementById('order-total-display').textContent = data.total.toLocaleString('ru-RU');
 
+    // Активация вкладки "товары" в левой части окна
     // Вкладка "Товары" выбирается по умолчанию
     const productsTabBtn = document.querySelector('.tab-btn[data-tab="products-tab"]');
-    // Удаляем border-transparent и добавляем border-emerald-500
     productsTabBtn.classList.remove('border-transparent');
     productsTabBtn.classList.add('border-emerald-500');
 
@@ -111,7 +136,23 @@ async function toggleOrderModal(row = null, orderData = null) {
 
     productsTabBtn.click(); // Переключаем на вкладку "Товары"
 
-    // loader.classList.remove('hidden');
+
+    // Активация вкладки "Дашборд" в правой части окна
+    // Вкладка "Дашборд" выбирается по умолчанию
+    const DashboardTabBtn = document.querySelector('.second-tab-btn[data-tab="material-tab"]');
+    DashboardTabBtn.classList.remove('border-transparent');
+    DashboardTabBtn.classList.add('border-emerald-500');
+
+    document.querySelectorAll('.second-tab-btn').forEach(btn => {
+        if (btn.dataset.tab !== "dashboard-tab") {
+            btn.classList.remove('border-emerald-500');
+            btn.classList.add('border-transparent');
+        }
+    });
+
+    DashboardTabBtn.click(); // Переключаем на вкладку "Материалы"
+    // Конец
+
     modal.classList.remove('hidden');
 
     // Обработчики закрытия
@@ -157,10 +198,10 @@ async function loadProductTab(orderId, loaderOpen, data) {
 <!--                <td class="text-sm px-2 py-1 text-center">${item.id}</td>-->
                 <td class="text-sm px-2 py-1 text-center">${item.line_number}</td>
                 <td class="text-sm px-2 py-1">${item.name}</td>
-                <td class="text-sm px-2 py-1 text-right">${parseFloat(item.quantity).toLocaleString('ru-RU')}</td>
-                <td class="text-sm px-2 py-1 text-right">${parseFloat(item.price).toLocaleString('ru-RU')}</td>
-                <td class="text-sm px-2 py-1 text-right">${parseFloat(item.amount).toLocaleString('ru-RU')}</td>
-                <td class="text-sm px-2 py-1 text-right">${parseFloat(item.total).toLocaleString('ru-RU')}</td>
+                <td class="text-sm px-2 py-1 text-center">${parseFloat(item.quantity).toLocaleString('ru-RU')}</td>
+                <td class="text-sm px-2 py-1 text-center">${parseFloat(item.price).toLocaleString('ru-RU')}</td>
+                <td class="text-sm px-2 py-1 text-center">${parseFloat(item.amount).toLocaleString('ru-RU')}</td>
+                <td class="text-sm px-2 py-1 text-center">${parseFloat(item.total).toLocaleString('ru-RU')}</td>
             `;
 
             const specToggleBtn = document.createElement('button');
@@ -170,10 +211,13 @@ async function loadProductTab(orderId, loaderOpen, data) {
                 e.stopPropagation();
                 const specRow = document.getElementById(`spec-for-${item.id}`);
                 const isHidden = specRow.classList.contains('hidden');
+
                 if (isHidden) {
                     await loadSpecsForItem(orderId, item.id);
+                    specToggleBtn.textContent = '▾';
                 } else {
                     specRow.classList.add('hidden');
+                    specToggleBtn.textContent = '▸';
                 }
             });
 
@@ -184,7 +228,7 @@ async function loadProductTab(orderId, loaderOpen, data) {
             specRow.id = `spec-for-${item.id}`;
             specRow.className = 'hidden';
             specRow.innerHTML = `
-                <td colspan="7" class="bg-gray-50">
+                <td colspan="6" class="bg-gray-50">
                     <div id="spec-container-${item.id}" class="ml-4 text-sm text-gray-700" data-loaded="false">
                         <!-- Сюда будет загружено дерево -->
                     </div>
@@ -236,19 +280,19 @@ async function loadSpecsForItem(orderId, itemId) {
     }
 }
 
-// Отрисовка дерева - работает
+// Отрисовка дерева
 async function renderSpecTree(items, parentElement, level = 0, options = {}) {
     const defaultOptions = {
-        baseIndent: 0,          // Базовый отступ в пикселях
-        indentMultiplier: 1,     // Множитель отступа для каждого уровня
-        indentUnit: 'px',        // Единица измерения отступа
-        showToggle: true,        // Показывать кнопки раскрытия/сворачивания
-        toggleClosed: '▸',       // Иконка закрытого состояния
-        toggleOpen: '▾',         // Иконка открытого состояния
-        toggleSize: '10px',      // Размер placeholder/кнопки
-        itemClass: '',           // Дополнительные классы для элементов
-        containerClass: '',      // Дополнительные классы для контейнеров
-        treeOffset: 22           // Отступ всего дерева
+        baseIndent: 0,
+        indentMultiplier: 1,
+        indentUnit: 'px',
+        showToggle: true,
+        toggleClosed: '▸',
+        toggleOpen: '▾',
+        toggleSize: '10px',
+        itemClass: '',
+        containerClass: '',
+        treeOffset: 22
     };
 
     options = { ...defaultOptions, ...options };
@@ -270,7 +314,7 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
         nodeWrapper.className = `spec-node ${options.itemClass}`.trim();
 
         const node = document.createElement('div');
-        node.className = 'text-xs bg-gray-50 flex justify-between p-1 rounded';
+        node.className = 'text-xs bg-gray-50 flex justify-between p-1 rounded text-gray-600 hover:text-emerald-500';
         node.style.paddingLeft = `${level * options.baseIndent * options.indentMultiplier}${options.indentUnit}`;
 
         const spanLeft = document.createElement('span');
@@ -278,14 +322,16 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
 
         if (item.children && item.children.length > 0 && options.showToggle) {
             const toggleBtn = document.createElement('button');
-            toggleBtn.className = 'toggle-node text-emerald-600 hover:text-emerald-800';
+            toggleBtn.className = 'toggle-node text-emerald-600';
             toggleBtn.type = 'button';
             toggleBtn.textContent = options.toggleClosed;
             toggleBtn.style.width = options.toggleSize;
             toggleBtn.style.minWidth = options.toggleSize;
             toggleBtn.onclick = () => {
                 childrenContainer.classList.toggle('hidden');
-                toggleBtn.textContent = childrenContainer.classList.contains('hidden') ? options.toggleClosed : options.toggleOpen;
+                toggleBtn.textContent = childrenContainer.classList.contains('hidden')
+                    ? options.toggleClosed
+                    : options.toggleOpen;
             };
             spanLeft.appendChild(toggleBtn);
         } else if (options.showToggle) {
@@ -300,7 +346,7 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
         spanLeft.appendChild(nameSpan);
 
         const spanRight = document.createElement('span');
-        spanRight.className = 'text-right text-xs text-gray-600';
+        spanRight.className = 'text-right text-xs';
         spanRight.textContent = `${parseFloat(item.TotalQuantity)} ${item.basic_unit || ''}`;
 
         node.appendChild(spanLeft);

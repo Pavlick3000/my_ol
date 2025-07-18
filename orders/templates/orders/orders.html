@@ -12,7 +12,7 @@
     
         <!-- Модальное окно "Детали заказа покупателя" -->
         <div id="ordermodal" class="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center hidden z-40">
-            <div class="bg-white p-6 rounded-lg w-max shadow-lg shadow-gray-700 relative">
+            <div class="bg-white p-6 rounded-lg max-w-[1520px] w-full shadow-lg shadow-gray-700 relative">
 
                 <!-- Кнопка закрытия -->
                 <button id="close-orders-modal" class="absolute top-2 right-2 p-2">
@@ -21,86 +21,124 @@
 
                 <!-- Заголовок -->
                 <div class="mb-4">
+                    <!-- Номер заказа, дата, наименование покупателя и сумма -->
                     <h2 class="text-xl inline-block relative after:block after:w-full after:h-[1px] after:bg-gray-300 after:absolute after:bottom-0 after:left-0">
-                        <span class="font-normal">Заказ покупателя:</span>
-                        <span id="order-number-display" class="font-bold ml-1"></span>
-                        <span class="font-normal text-sm ml-2">от</span>
+                        <span class="font-normal text-sm">Заказ:</span>
+                        <span id="order-number-display" class="font-semibold"></span>
+                        <span class="font-normal text-xs">от</span>
                         <span id="order-date-display" class="font-normal text-sm"></span>
-                    </h2>
-
-                    <h3 class="text-xl mt-4">
-                        <span id="order-buyer-display" class="font-normal text-sm"></span>
-                    </h3>
-                    <h3 class="text-xl">
+                        <span class="mx-2 text-gray-300"> </span>
+                        <span id="order-buyer-display" class="font-normal text-xl"></span>
+                        <span class="mx-2 text-gray-300"> </span>
                         <span id="order-total-display" class="font-normal text-xl"></span>
                         <span class="font-normal text-sm">₽ с НДС</span>
-                    </h3>
+                    </h2>
                 </div>
+                
+                <div class="modal-content flex gap-6 px-4">
 
-                <!-- Вкладки -->
-                <div class="mb-4 border-b border-gray-300 flex space-x-4">
-                    <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="products-tab">
-                        Товары 
-                        (<span id="max-line-number">0</span>)
-                    </button>
+                    <!-- Левая часть модального окна-->
+                    <div class="flex-[0_0_800px]">
+                        
+                        <!-- Вкладки -->
+                        <div class="mb-4 border-b border-gray-300 flex space-x-4">
+                            <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="products-tab">
+                                Товары (<span id="max-line-number">0</span>)
+                            </button>
+                            <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="services-tab">
+                                Услуги
+                            </button>
+                        </div>
+                        
+                        <!-- Контент вкладок -->
+                        <div class="tab-content" id="products-tab">
+                            <div class="overflow-y-auto pr-2 scrollbar-custom max-h-[59vh]">
+                                <table class="my-table w-full">
+{#                                <table class="w-full">#}
+                                    <thead class="sticky top-0 bg-white">
+                                    <tr>
+                                        <th class="w-2 px-2 py-1"></th>
+                                        <th class="w-24 px-2 py-1 font-medium">Наименование</th>
+                                        <th class="w-10 px-2 py-1 text-center font-medium">Кол-во</th>
+                                        <th class="w-10 px-2 py-1 text-center font-medium">Цена</th>
+                                        <th class="w-10 px-2 py-1 text-center font-medium">Сумма</th>
+                                        <th class="w-10 px-2 py-1 text-center font-medium">Сумма с НДС</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="order-items-table">
+                                    <!-- JS вставит строки -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
 
-                    <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="materials-tab">
-                        Состав
-{#                        (<span id="materials-line-number">0</span>)#}
-                    </button>
-
-                    <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="services-tab">
-                        Услуги
-                    </button>
-                </div>
-
-                <!-- Контент вкладок -->
-                <!-- Товары -->
-                <div class="tab-content" id="products-tab">
-                    <div class="overflow-y-auto pr-2 scrollbar-custom" style="max-height: 59vh; scrollbar-gutter: stable;">
-                        <table class="my-table w-full">
-                            <thead class="sticky top-0 bg-white">
-                            <tr>
-{#                                <th class="w-2 px-2 py-1">id</th>#}
-                                <th class="w-2 px-2 py-1">#</th>
-                                <th class="w-24 px-2 py-1">Наименование</th>
-                                <th class="w-10 px-2 py-1 text-right">Кол-во</th>
-                                <th class="w-10 px-2 py-1 text-right">Цена</th>
-                                <th class="w-10 px-2 py-1 text-right">Сумма</th>
-                                <th class="w-10 px-2 py-1 text-right">Сумма с НДС</th>
-                            </tr>
-                            <tr class="spec-row hidden" id="spec-for-{{ item.id }}">
-                                <td colspan="6">
-                                    <div class="spec-container" id="spec-container-{{ item.id }}"></div>
-                                </td>
-                            </tr>
-                            </thead>
-                            <tbody id="order-items-table">
-                            <!-- JS вставит строки -->
-                            </tbody>
-                        </table>
+                        <div class="tab-content hidden" id="services-tab">
+                            <p class="text-sm text-gray-500">Здесь будут перечислены услуги...</p>
+                        </div>
+                        
                     </div>
-                </div>
-                
-                <!-- Услуги -->
-                <div class="tab-content hidden" id="services-tab">
-                    <p class="text-sm text-gray-500">Здесь будут перечислены услуги...</p>
-                </div>
-                
-                <!-- Материалы -->
-                <div class="tab-content hidden" id="materials-tab">
 
-                    <div id="specs-tree-container" class="p-4 max-h-[600px] overflow-y-auto"></div>
+                    <!-- Вертикальная линия -->
+                    <div class="w-px bg-gradient-to-b from-gray-300 via-gray-400 to-gray-300 min-h-[350px]"></div>
+                    
+                    <!-- Правая часть модального окна-->
+                    <div class="flex-1 flex flex-col">
 
+                        <!-- Вкладки -->
+                        <div class="mb-4 border-b border-gray-300 flex space-x-4">
+                            <button type="button" class="second-tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="dashboard-tab">
+                                Сводка
+                            </button>
+                            <button type="button" class="second-tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="material-tab">
+                                Материалы
+                            </button>
+                            <button type="button" class="second-tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="job-tab">
+                                Операции
+                            </button>
+                        </div>
+                        
+                        <!-- Контент вкладок -->
+                        <div class="second-tab-content hidden" id="dashboard-tab">
+                            <p class="text-sm text-gray-500">Здесь будет красивый дашборд...</p>
+                        </div>
+                        
+                        <div class="second-tab-content hidden" id="material-tab">
+
+                            <div class="flex items-center justify-between bg-gray-100 p-2 rounded">
+                                
+                                <!-- Поиск -->
+                                <div class="flex items-center space-x-2">
+                                    <img src="{% static 'icons/search.ico' %}" alt="Search" class="w-6 h-6">
+                                    <input type="text" placeholder="Поиск" class="bg-transparent focus:outline-none text-sm placeholder-gray-400">
+                                </div>
+
+                                <!-- Сортировка и фильтр -->
+                                <div class="flex items-center space-x-4 text-gray-500 text-sm">
+                                    <!-- Сортировка-->
+                                    <button class="flex items-center space-x-1 hover:text-gray-700">
+                                        <img src="{% static 'icons/sort.ico' %}" alt="Sort" class="w-4 h-4">
+                                    </button>
+                                    <!-- Вертикальная черта -->
+                                    <div class="h-4 border-l border-gray-300"></div>
+                                    <!-- Фильтр -->
+                                    <button class="flex items-center space-x-1 hover:text-gray-700">
+                                        <img src="{% static 'icons/filter.ico' %}" alt="Filter" class="w-4 h-4">
+                                    </button>
+                                </div>
+                            </div>
+                            
+                        </div>
+                        
+                        <div class="second-tab-content hidden" id="job-tab">
+                            <p class="text-sm text-gray-500">Здесь будет таблица с операциями, строка поиска, фильтры и сортировка</p>
+                        </div>
+                        
+                    </div>
+                    
                 </div>
-
             </div>
-
-            <div id="modal-inner-loader" class="absolute inset-0 bg-gray-700 bg-opacity-50 flex justify-center items-center z-50 hidden">
-                <div class="loader border-4 border-t-transparent border-emerald-500 rounded-full w-12 h-12 animate-spin"></div>
-            </div>
-            
         </div>
+
 
         <!-- Модальное окно "Спецификация номенклатуры" -->
         <div id="specsModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50">
@@ -229,13 +267,13 @@
             <table class="my-table mt-4 w-full" id="ordersTable">
                 <thead>
                 <tr>
-                    <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(1)">id</th>
-                    <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(0)">Дата</th>
-                    <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(2)">Заказ покупателя №</th>
-                    <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(3)">Покупатель</th>
-                    <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(4)">Сумма</th>
-                    <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(4)">Отгружен</th>
-                    <th class="cursor-pointer hover:underline hover:text-red-600" onclick="sortTable(4)">Оплачен</th>
+                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(1)">id</th>
+                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(0)">Дата</th>
+                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(2)">Заказ покупателя №</th>
+                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(3)">Покупатель</th>
+                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(4)">Сумма</th>
+                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(4)">Отгружен</th>
+                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(4)">Оплачен</th>
                 </tr>
                 </thead>
                 <tbody>
