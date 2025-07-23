@@ -134,7 +134,7 @@ async function toggleOrderModal(row = null, orderData = null) {
     });
 
     productsTabBtn.click(); // Переключаем на вкладку "Товары"
-
+    // Конец
 
     // Активация вкладки "Дашборд" в правой части окна
     // Вкладка "Дашборд" выбирается по умолчанию
@@ -160,28 +160,14 @@ async function toggleOrderModal(row = null, orderData = null) {
     document.addEventListener('keydown', (e) => e.key === 'Escape' && modal.classList.add('hidden'));
 
     loaderOpen.classList.add('hidden');
+
     // Загрузка данных заказа
-    await loadProductTab(orderId, loaderOpen, data);
-    await loadMaterialsTable(orderId, null);
-    // await loadMaterialsTable(orderId, null, null);
-
-
-    // Загружаем дерево только при первом открытии вкладки
-    const treeContainer = document.getElementById('specs-tree-container');
-    treeContainer.innerHTML = ''; // очистить старое
-
-    if (treeContainer.innerHTML.trim() === '') {
-        try {
-            // await loadSpecsTree(orderId);
-        } catch (error) {
-            console.error('Ошибка при загрузке дерева спецификации:', error);
-        }
-    }
+    await loadProductTab(orderId, loaderOpen, data); // левая часть - дерево
+    await loadMaterialsTable(orderId, null, null); // правая часть - таблица материалов
 
 }
 
 // Загрузка данных заказа - вкладка "Товары"
-// let currentItemId = null;
 async function loadProductTab(orderId, loaderOpen, data) {
     try {
         const tableBody = document.getElementById('order-items-table');
@@ -209,21 +195,13 @@ async function loadProductTab(orderId, loaderOpen, data) {
 
             // Добавляем обработчик клика на строку
             itemRow.addEventListener('click', () => {
-                const displaySpan = document.getElementById('order-and-component-display');
-                if (displaySpan) {
-                    displaySpan.textContent = `orderId: ${orderId}, itemId: ${itemRow.dataset.itemId}`;
-                }
+                // const displaySpan = document.getElementById('order-and-component-display');
+                // if (displaySpan) {
+                //     displaySpan.textContent = `orderId: ${orderId}, itemId: ${itemRow.dataset.itemId}`;
+                // }
 
-
-
-
-                // Тут тести вывод таблицы материалов по клику
-                // currentItemId = itemRow.dataset.itemId;
-                // loadMaterialsTable(orderId, currentItemId, null);
+                // Грузим таблицу с материалами по фильтру из клика на строку заказа
                 loadMaterialsTable(orderId, itemRow.dataset.itemId);
-
-
-
 
             });
 
@@ -360,15 +338,7 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
 
             const display = document.getElementById('order-and-component-display');
             const orderId = document.getElementById('ordermodal').dataset.orderId;
-            const componentId = node.dataset.componentId || '-';
             const path = node.dataset.path || '';
-            console.log('Path:', path);
-
-            if (display) {
-                // display.textContent = `orderId: ${orderId}, itemId: ${componentId}`;
-                display.textContent = `orderId: ${orderId}, itemId: ${componentId}, path: ${path}`;
-
-            }
 
             // Подсветка
             document.querySelectorAll('.spec-node > div').forEach(el => {
@@ -376,17 +346,8 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
             });
             node.classList.add('bg-emerald-100', 'text-emerald-700');
 
-
-
-
-
-            // Тут тести вывод таблицы материалов по клику
-            // const itemId = node.dataset.componentId;
-            console.log('Path для выбранной позиции:', path);
+            // Грузим таблицу с материалами по фильтру из клика на строку дерева
             loadMaterialsTable(orderId, null, path);
-
-
-
 
         });
 
@@ -442,37 +403,7 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
     parentElement.appendChild(container);
 }
 
-// async function loadMaterialsTable(orderId, itemId = null, path = '') {
-//     const endpoint = itemId
-//         ? `/orders/getFlatMaterials/${orderId}/item/${itemId}/`
-//         : `/orders/getFlatMaterials/${orderId}/`;
-//
-//     const materialTableBody = document.getElementById('materials-table-body');
-//     materialTableBody.innerHTML = '';
-//
-//     try {
-//         console.log(endpoint)
-//         const response = await fetch(endpoint);
-//         const data = await response.json();
-//
-//         data.items.forEach(item => {
-//             const row = document.createElement('tr');
-//             row.className = 'text-sm border-b';
-//
-//             row.innerHTML = `
-//                 <td class="px-2 py-1">${item.ComponentName}</td>
-//                 <td class="px-2 py-1 text-center">${parseFloat(item.TotalQuantity).toLocaleString('ru-RU')}</td>
-//
-//             `;
-//
-//             materialTableBody.appendChild(row);
-//         });
-//     } catch (error) {
-//         materialTableBody.innerHTML = `<tr><td colspan="2" class="text-red-500">Ошибка загрузки</td></tr>`;
-//         console.error('Ошибка загрузки материалов:', error);
-//     }
-// }
-
+// Таблица с материалами
 async function loadMaterialsTable(orderId, itemId = null, path = '') {
     let endpoint = itemId
         ? `/orders/getFlatMaterials/${orderId}/item/${itemId}/`
@@ -486,7 +417,7 @@ async function loadMaterialsTable(orderId, itemId = null, path = '') {
     materialTableBody.innerHTML = '';
 
     try {
-        console.log('Запрос к:', endpoint);  // ← для отладки
+        // console.log('Запрос к:', endpoint);  // ← для отладки
         const response = await fetch(endpoint);
         const data = await response.json();
 
@@ -497,6 +428,7 @@ async function loadMaterialsTable(orderId, itemId = null, path = '') {
             row.innerHTML = `
                 <td class="px-2 py-1">${item.ComponentName}</td>
                 <td class="px-2 py-1 text-center">${parseFloat(item.TotalQuantity).toLocaleString('ru-RU')}</td>
+                <td class="px-2 py-1 text-center">${item.basic_unit}</td>
             `;
 
             materialTableBody.appendChild(row);

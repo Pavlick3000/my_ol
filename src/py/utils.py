@@ -1,5 +1,6 @@
 from collections import defaultdict
 from django.db import connection
+from decimal import Decimal
 
 # Получаем дерево из SQL процедуры
 def get_specs_tree(orderId, itemId=None):
@@ -109,4 +110,30 @@ def sort_tree(items):
     for item in items:
         if item['children']:
             sort_tree(item['children'])
+
+# Группировка таблицы материалов
+def group_flat_materials(rows, columns):
+    grouped = defaultdict(lambda: {'TotalQuantity': Decimal(0)})
+
+    for row in rows:
+        row_dict = dict(zip(columns, row))
+
+        key = (
+            row_dict.get('ComponentName'),
+            row_dict.get('basic_unit'),
+        )
+
+        group = grouped[key]
+        group['ComponentName'] = row_dict.get('ComponentName')
+        group['basic_unit'] = row_dict.get('basic_unit')
+        group['TotalQuantity'] += row_dict.get('TotalQuantity') or Decimal(0)
+
+    return [
+        {
+            'ComponentName': k[0],
+            'basic_unit': k[1],
+            'TotalQuantity': float(v['TotalQuantity']),
+        }
+        for k, v in grouped.items()
+    ]
 

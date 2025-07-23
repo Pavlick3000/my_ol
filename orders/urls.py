@@ -11,6 +11,5 @@ urlpatterns = [
     path('getSpecTreeByItem/<int:orderId>/<int:itemId>/', getSpecTreeByItem, name='getSpecTreeByItem'),
     path('getFlatMaterials/<int:orderId>/', getFlatMaterials, name='getFlatMaterials'),
     path('getFlatMaterials/<int:orderId>/item/<int:itemId>/', getFlatMaterials, name='getFlatMaterials_by_item'),
-    # path('getFlatMaterialsTree/<int:orderId>/item/<int:itemId>/', getFlatMaterialsTree, name='getFlatMaterialsTree'),
 
 ]
