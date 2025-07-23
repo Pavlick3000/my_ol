@@ -1,5 +1,5 @@
 from django.urls import path
-from orders.views import orders, orderDetails, specsDetails, specsDetailsSQL, get_spec_tree_by_item
+from orders.views import orders, orderDetails, specsDetails, specsDetailsSQL, getSpecTreeByItem, getFlatMaterials
 
 app_name = 'orders'
 
@@ -8,5 +8,9 @@ urlpatterns = [
     path('orderDetails/<int:id>/', orderDetails, name='orderDetails'),
     path('specsDetails/<int:itemId>/', specsDetails, name='specsDetails'),
     path('specsDetailsSQL/<int:orderId>/', specsDetailsSQL, name='specsDetailsSQL'),
-    path('get_spec_tree_by_item/<int:orderId>/<int:itemId>/', get_spec_tree_by_item, name='get_spec_tree_by_item')
+    path('getSpecTreeByItem/<int:orderId>/<int:itemId>/', getSpecTreeByItem, name='getSpecTreeByItem'),
+    path('getFlatMaterials/<int:orderId>/', getFlatMaterials, name='getFlatMaterials'),
+    path('getFlatMaterials/<int:orderId>/item/<int:itemId>/', getFlatMaterials, name='getFlatMaterials_by_item'),
+    # path('getFlatMaterialsTree/<int:orderId>/item/<int:itemId>/', getFlatMaterialsTree, name='getFlatMaterialsTree'),
+
 ]

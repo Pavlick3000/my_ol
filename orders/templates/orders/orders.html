@@ -52,11 +52,11 @@
                         
                         <!-- Контент вкладок -->
                         <div class="tab-content" id="products-tab">
-                            <div class="overflow-y-auto pr-2 scrollbar-custom max-h-[59vh]">
-                                <table class="my-table w-full">
-{#                                <table class="w-full">#}
+                            <div class="overflow-y-auto pr-2 scrollbar-custom max-h-[59vh] mt-2">
+{#                                <table class="my-table w-full">#}
+                                <table class="w-full">
                                     <thead class="sticky top-0 bg-white">
-                                    <tr>
+                                    <tr class="border-b border-gray-300">
                                         <th class="w-2 px-2 py-1"></th>
                                         <th class="w-24 px-2 py-1 font-medium">Наименование</th>
                                         <th class="w-10 px-2 py-1 text-center font-medium">Кол-во</th>
@@ -103,7 +103,8 @@
                         </div>
                         
                         <div class="second-tab-content hidden" id="material-tab">
-
+                            
+                            <!-- Поиск, сортировка, фильтр -->
                             <div class="flex items-center justify-between bg-gray-100 p-2 rounded">
                                 
                                 <!-- Поиск -->
@@ -125,6 +126,28 @@
                                         <img src="{% static 'icons/filter.ico' %}" alt="Filter" class="w-4 h-4">
                                     </button>
                                 </div>
+                                
+                            </div>
+                            
+                            <!-- Для теста -->
+{#                            <span class="font-normal text-sm">Заказ:</span>#}
+                            <span id="order-and-component-display" class="ml-2 text-gray-700 text-sm"></span>
+                            <!--  -->
+                            
+                            <div class="overflow-y-auto pr-2 scrollbar-custom max-h-[59vh] mt-2">
+{#                                <table class="my-table w-full">#}
+                                <table class="w-full">
+                                    <thead class="sticky top-0 bg-white">
+                                    <tr class="border-b border-gray-300">
+                                        <th class="w-24 px-2 py-1 font-medium text-sm">Наименование</th>
+                                        <th class="w-10 px-2 py-1 font-medium text-sm">Кол-во</th>
+
+                                    </tr>
+                                    </thead>
+                                    <tbody id="materials-table-body">
+                                    <!-- JS вставит строки -->
+                                    </tbody>
+                                </table>
                             </div>
                             
                         </div>

@@ -14,6 +14,7 @@ from django.db.models import Q
 import traceback
 
 from src.py.utils import get_specs_tree, group_children
+from django.db import connection
 
 # "Заказы покупателей" - отображаем все заказы
 @cache_page(20)
@@ -205,10 +206,10 @@ def specsDetailsSQL(request, orderId):
 
 
 # Вызов SQL процедуры, передаем ID заказа и ID номенклатуры для фильтрации
-def get_spec_tree_by_item(request, orderId, itemId):
+def getSpecTreeByItem(request, orderId, itemId):
     try:
         full_tree = get_specs_tree(orderId, itemId)
-        raw_subtree = find_spec_subtree_by_item_id(full_tree, itemId)
+        raw_subtree = findSpecSubtreeByItemId(full_tree, itemId)
 
         if not raw_subtree:
             print("Поддерево не найдено")
@@ -223,7 +224,7 @@ def get_spec_tree_by_item(request, orderId, itemId):
         return JsonResponse({'error': str(e)}, status=500)
 
 # Возвращает список дочерних элементов по указанному ID номенклатуры
-def find_spec_subtree_by_item_id(tree, itemId, level=0):
+def findSpecSubtreeByItemId(tree, itemId, level=0):
     # indent = '  ' * level # Для отступов
     for node in tree:
         if node.get('ComponentDbId') == itemId:
@@ -231,10 +232,178 @@ def find_spec_subtree_by_item_id(tree, itemId, level=0):
 
         children = node.get('children', [])
         if children:
-            result = find_spec_subtree_by_item_id(children, itemId, level + 1)
+            result = findSpecSubtreeByItemId(children, itemId, level + 1)
             if result:
                 return result
     return []
+
+# Не работает для детей
+# def getFlatMaterials(request, orderId, itemId=None):
+#     try:
+#         with connection.cursor() as cursor:
+#             cursor.execute("EXEC GetSpecsDetailsByOrderId %s, NULL, %s", [orderId, itemId])
+#             if not cursor.description:
+#                 return JsonResponse({'items': []})
+#             columns = [col[0] for col in cursor.description]
+#             rows = cursor.fetchall()
+#             result = [
+#                 dict(zip(columns, [val.hex() if isinstance(val, bytes) else val for val in row]))
+#                 for row in rows
+#             ]
+#         return JsonResponse({'items': result})
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
+
+
+# def getFlatMaterials(request, orderId, itemId=None):
+#     try:
+#         node_path = request.GET.get('path')  # ← получаем path из query-параметра
+#         print(node_path)
+#         with connection.cursor() as cursor:
+#             cursor.execute(
+#                 "EXEC GetSpecsDetailsByOrderId %s, NULL, %s, %s",
+#                 [orderId, itemId, node_path]
+#             )
+#             if not cursor.description:
+#                 return JsonResponse({'items': []})
+#             columns = [col[0] for col in cursor.description]
+#             rows = cursor.fetchall()
+#
+#             if node_path:
+#                 rows = [row for row in rows if str(row[columns.index('Path')]) == node_path]
+#
+#             result = [
+#                 dict(zip(columns, [val.hex() if isinstance(val, bytes) else val for val in row]))
+#                 for row in rows
+#             ]
+#
+#         return JsonResponse({'items': result})
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
+
+# Криво, но работает 2207
+# def getFlatMaterials(request, orderId, itemId=None):
+#     try:
+#         node_path = request.GET.get('path')  # получаем path из query-параметра
+#
+#         if node_path:
+#             first_item_id = int(node_path.split(' > ')[0])
+#         else:
+#             first_item_id = None
+#
+#         print(f"Received path parameter: {node_path!r}")  # Логируем параметр path
+#
+#
+#         with connection.cursor() as cursor:
+#             cursor.execute(
+#                 "EXEC GetSpecsDetailsByOrderId %s, NULL, %s, %s",
+#                 [orderId, first_item_id, node_path]
+#             )
+#             if not cursor.description:
+#                 print("No data returned from stored procedure")
+#                 return JsonResponse({'items': []})
+#
+#             columns = [col[0] for col in cursor.description]
+#             rows = cursor.fetchall()
+#
+#             print(f"Rows returned from procedure: {len(rows)}")
+#             # Логируем первые 3 строки (без преобразования в hex, чтобы было читаемо)
+#             for i, row in enumerate(rows[:3]):
+#                 row_dict = dict(zip(columns, row))
+#                 print(f"Row {i+1}: {row_dict}")
+#
+#             # Если есть node_path, дополнительно фильтруем в Python
+#             if node_path:
+#                 rows_before_filter = len(rows)
+#                 # rows = [row for row in rows if str(row[columns.index('Path')]) == node_path]
+#                 rows = [row for row in rows if str(row[columns.index('Path')]).startswith(node_path)]
+#                 print(f"Rows after filtering by path ({node_path!r}): {len(rows)} (before: {rows_before_filter})")
+#
+#             result = [
+#                 dict(zip(columns, [val.hex() if isinstance(val, bytes) else val for val in row]))
+#                 for row in rows
+#             ]
+#
+#             print(f"Final result count to return: {len(result)}")
+#
+#         return JsonResponse({'items': result})
+#     except Exception as e:
+#         print(f"Exception in getFlatMaterials: {e}")
+#         return JsonResponse({'error': str(e)}, status=500)
+
+# ТЕСТ
+def getFlatMaterials(request, orderId, itemId=None):
+    try:
+        node_path = request.GET.get('path')  # получаем path из query-параметра
+        print(f"Received path parameter: {node_path!r}")
+
+        # Если path задан и itemId не передан, то берем первый ID из path
+        if node_path and not itemId:
+            try:
+                itemId = int(node_path.split(' > ')[0])
+                print(f"Extracted itemId from path: {itemId}")
+            except (ValueError, IndexError) as e:
+                print(f"Failed to extract itemId from path: {e}")
+                itemId = None  # fallback, чтобы не ломать вызов
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "EXEC GetSpecsDetailsByOrderId %s, NULL, %s, %s",
+                [orderId, itemId, node_path]
+            )
+
+            if not cursor.description:
+                print("No data returned from stored procedure")
+                return JsonResponse({'items': []})
+
+            columns = [col[0] for col in cursor.description]
+            rows = cursor.fetchall()
+            print(f"Rows returned from procedure: {len(rows)}")
+
+            for i, row in enumerate(rows[:3]):
+                row_dict = dict(zip(columns, row))
+                print(f"Row {i+1}: {row_dict}")
+
+            # Фильтрация по пути (на всякий случай)
+            if node_path:
+                path_prefix = node_path + ' > '
+                rows = [
+                    row for row in rows
+                    if str(row[columns.index('Path')]).startswith(path_prefix)
+                ]
+                print(f"Rows after filtering by children of path ({node_path!r}): {len(rows)}")
+
+            # Получаем все пути
+            all_paths = set(str(row[columns.index('Path')]) for row in rows)
+
+            # Собираем все родительские пути (префиксы)
+            parent_paths = set()
+            for path in all_paths:
+                parts = path.split(' > ')
+                for i in range(1, len(parts)):
+                    parent_path = ' > '.join(parts[:i])
+                    parent_paths.add(parent_path)
+
+            # Оставляем только те строки, чей Path не является родительским
+            leaf_rows = [
+                row for row in rows
+                if str(row[columns.index('Path')]) not in parent_paths
+            ]
+
+            print(f"Rows after filtering only leaf nodes: {len(leaf_rows)}")
+            rows = leaf_rows
+
+            result = [
+                dict(zip(columns, [val.hex() if isinstance(val, bytes) else val for val in row]))
+                for row in rows
+            ]
+            print(f"Final result count to return: {len(result)}")
+
+        return JsonResponse({'items': result})
+    except Exception as e:
+        print(f"Exception in getFlatMaterials: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 
 

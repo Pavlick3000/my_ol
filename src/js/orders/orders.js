@@ -87,7 +87,7 @@ async function toggleOrderModal(row = null, orderData = null) {
 
     const orderId = row.dataset.id;
 
-    modal.dataset.orderId = orderId; // Сохраняем ID заказа в модальном окне
+    modal.dataset.orderId = orderId; // Сохраняем ID заказа в модальном окне// document.getElementById('order-and-component-display').textContent = `#${orderId} / Компонент: -`;
 
     // Настройки размеров
     // const modalHorizontalOffset = '-450px';
@@ -111,7 +111,6 @@ async function toggleOrderModal(row = null, orderData = null) {
 
         if (!data) {
             data = await fetchOrderDetails(orderId); // запрос делается только если данных нет
-            // console.log('data:', data);
         }
         if (!data) return;
 
@@ -163,6 +162,9 @@ async function toggleOrderModal(row = null, orderData = null) {
     loaderOpen.classList.add('hidden');
     // Загрузка данных заказа
     await loadProductTab(orderId, loaderOpen, data);
+    await loadMaterialsTable(orderId, null);
+    // await loadMaterialsTable(orderId, null, null);
+
 
     // Загружаем дерево только при первом открытии вкладки
     const treeContainer = document.getElementById('specs-tree-container');
@@ -179,6 +181,7 @@ async function toggleOrderModal(row = null, orderData = null) {
 }
 
 // Загрузка данных заказа - вкладка "Товары"
+// let currentItemId = null;
 async function loadProductTab(orderId, loaderOpen, data) {
     try {
         const tableBody = document.getElementById('order-items-table');
@@ -188,7 +191,7 @@ async function loadProductTab(orderId, loaderOpen, data) {
 
         data.items.forEach(item => {
             const itemRow = document.createElement('tr');
-            itemRow.className = 'hover:text-emerald-500';
+            itemRow.className = 'cursor-pointer parent-row product-row border-b border-gray-300 hover:text-emerald-500';
             itemRow.dataset.itemId = item.id;
             itemRow.dataset.itemName = item.name;
             itemRow.dataset.key = item.key;
@@ -204,11 +207,31 @@ async function loadProductTab(orderId, loaderOpen, data) {
                 <td class="text-sm px-2 py-1 text-center">${parseFloat(item.total).toLocaleString('ru-RU')}</td>
             `;
 
+            // Добавляем обработчик клика на строку
+            itemRow.addEventListener('click', () => {
+                const displaySpan = document.getElementById('order-and-component-display');
+                if (displaySpan) {
+                    displaySpan.textContent = `orderId: ${orderId}, itemId: ${itemRow.dataset.itemId}`;
+                }
+
+
+
+
+                // Тут тести вывод таблицы материалов по клику
+                // currentItemId = itemRow.dataset.itemId;
+                // loadMaterialsTable(orderId, currentItemId, null);
+                loadMaterialsTable(orderId, itemRow.dataset.itemId);
+
+
+
+
+            });
+
             const specToggleBtn = document.createElement('button');
             specToggleBtn.textContent = '▸';
             specToggleBtn.className = 'ml-2 text-emerald-600 hover:text-emerald-800';
             specToggleBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
+                // e.stopPropagation();
                 const specRow = document.getElementById(`spec-for-${item.id}`);
                 const isHidden = specRow.classList.contains('hidden');
 
@@ -228,7 +251,7 @@ async function loadProductTab(orderId, loaderOpen, data) {
             specRow.id = `spec-for-${item.id}`;
             specRow.className = 'hidden';
             specRow.innerHTML = `
-                <td colspan="6" class="bg-gray-50">
+                <td colspan="6" class=""> <!-- тут можно указать фон "за деревом" -->
                     <div id="spec-container-${item.id}" class="ml-4 text-sm text-gray-700" data-loaded="false">
                         <!-- Сюда будет загружено дерево -->
                     </div>
@@ -243,6 +266,17 @@ async function loadProductTab(orderId, loaderOpen, data) {
             ? Math.max(...data.items.map(item => item.line_number))
             : 0;
         document.getElementById('max-line-number').textContent = maxLineNumber;
+
+        // Красим зеброй таблицу
+        const itemRows = document.querySelectorAll('#order-items-table .product-row');
+        itemRows.forEach((row, index) => {
+            row.classList.remove('bg-gray-50', 'bg-white');
+            if (index % 2 === 1) {
+                row.classList.add('bg-gray-50');
+            } else {
+                row.classList.add('bg-white');
+            }
+        });
 
     } catch (error) {
         // Можно убрать или обработать иначе, если нужно
@@ -265,7 +299,7 @@ async function loadSpecsForItem(orderId, itemId) {
     }
 
     try {
-        const response = await fetch(`/orders/get_spec_tree_by_item/${orderId}/${itemId}/`);
+        const response = await fetch(`/orders/getSpecTreeByItem/${orderId}/${itemId}/`);
 
         if (!response.ok) throw new Error('Ошибка при получении спецификации');
 
@@ -314,8 +348,47 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
         nodeWrapper.className = `spec-node ${options.itemClass}`.trim();
 
         const node = document.createElement('div');
-        node.className = 'text-xs bg-gray-50 flex justify-between p-1 rounded text-gray-600 hover:text-emerald-500';
+        node.className = 'text-xs bg-gray-100 flex justify-between p-1 text-gray-600 hover:text-emerald-500'; // классы для оформления дерева
         node.style.paddingLeft = `${level * options.baseIndent * options.indentMultiplier}${options.indentUnit}`;
+
+        // ТЕСТ
+        node.dataset.componentId = item.ComponentDbId;
+        node.dataset.path = item.Path || '';
+        node.classList.add('cursor-pointer', 'hover:text-emerald-500');
+        node.addEventListener('click', (e) => {
+            if (e.target.classList.contains('toggle-node')) return;
+
+            const display = document.getElementById('order-and-component-display');
+            const orderId = document.getElementById('ordermodal').dataset.orderId;
+            const componentId = node.dataset.componentId || '-';
+            const path = node.dataset.path || '';
+            console.log('Path:', path);
+
+            if (display) {
+                // display.textContent = `orderId: ${orderId}, itemId: ${componentId}`;
+                display.textContent = `orderId: ${orderId}, itemId: ${componentId}, path: ${path}`;
+
+            }
+
+            // Подсветка
+            document.querySelectorAll('.spec-node > div').forEach(el => {
+                el.classList.remove('bg-emerald-100', 'text-emerald-700');
+            });
+            node.classList.add('bg-emerald-100', 'text-emerald-700');
+
+
+
+
+
+            // Тут тести вывод таблицы материалов по клику
+            // const itemId = node.dataset.componentId;
+            console.log('Path для выбранной позиции:', path);
+            loadMaterialsTable(orderId, null, path);
+
+
+
+
+        });
 
         const spanLeft = document.createElement('span');
         spanLeft.className = 'flex items-center gap-2';
@@ -368,6 +441,72 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
 
     parentElement.appendChild(container);
 }
+
+// async function loadMaterialsTable(orderId, itemId = null, path = '') {
+//     const endpoint = itemId
+//         ? `/orders/getFlatMaterials/${orderId}/item/${itemId}/`
+//         : `/orders/getFlatMaterials/${orderId}/`;
+//
+//     const materialTableBody = document.getElementById('materials-table-body');
+//     materialTableBody.innerHTML = '';
+//
+//     try {
+//         console.log(endpoint)
+//         const response = await fetch(endpoint);
+//         const data = await response.json();
+//
+//         data.items.forEach(item => {
+//             const row = document.createElement('tr');
+//             row.className = 'text-sm border-b';
+//
+//             row.innerHTML = `
+//                 <td class="px-2 py-1">${item.ComponentName}</td>
+//                 <td class="px-2 py-1 text-center">${parseFloat(item.TotalQuantity).toLocaleString('ru-RU')}</td>
+//
+//             `;
+//
+//             materialTableBody.appendChild(row);
+//         });
+//     } catch (error) {
+//         materialTableBody.innerHTML = `<tr><td colspan="2" class="text-red-500">Ошибка загрузки</td></tr>`;
+//         console.error('Ошибка загрузки материалов:', error);
+//     }
+// }
+
+async function loadMaterialsTable(orderId, itemId = null, path = '') {
+    let endpoint = itemId
+        ? `/orders/getFlatMaterials/${orderId}/item/${itemId}/`
+        : `/orders/getFlatMaterials/${orderId}/`;
+
+    if (path) {
+        endpoint += `?path=${encodeURIComponent(path)}`;
+    }
+
+    const materialTableBody = document.getElementById('materials-table-body');
+    materialTableBody.innerHTML = '';
+
+    try {
+        console.log('Запрос к:', endpoint);  // ← для отладки
+        const response = await fetch(endpoint);
+        const data = await response.json();
+
+        data.items.forEach(item => {
+            const row = document.createElement('tr');
+            row.className = 'text-sm border-b';
+
+            row.innerHTML = `
+                <td class="px-2 py-1">${item.ComponentName}</td>
+                <td class="px-2 py-1 text-center">${parseFloat(item.TotalQuantity).toLocaleString('ru-RU')}</td>
+            `;
+
+            materialTableBody.appendChild(row);
+        });
+    } catch (error) {
+        materialTableBody.innerHTML = `<tr><td colspan="2" class="text-red-500">Ошибка загрузки</td></tr>`;
+        console.error('Ошибка загрузки материалов:', error);
+    }
+}
+
 
 
 

@@ -109,3 +109,4 @@ def sort_tree(items):
     for item in items:
         if item['children']:
             sort_tree(item['children'])
+
