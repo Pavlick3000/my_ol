@@ -19,8 +19,7 @@ async function fetchOrderDetails(orderId, refresh = false) {
 
         orderCache[orderId] = data; // сохраняем в кэш
         return data;
-        // console.log(result.data);  // ← данные заказа
-        // console.log(result.items_data);
+
     } catch (error) {
         console.error('Ошибка загрузки данных заказа:', error);
         return null;
@@ -77,6 +76,14 @@ document.querySelectorAll('.second-tab-btn').forEach(btn => {
     });
 });
 
+// Функция для очистки выделения цветом
+function clearSelectionHighlight() {
+    document.querySelectorAll('[data-selected="true"]').forEach(el => {
+        el.classList.remove('!bg-emerald-100');
+        delete el.dataset.selected;
+    });
+}
+
 // Открытие модального окна с составом "Заказа покупателя"
 async function toggleOrderModal(row = null, orderData = null) {
 
@@ -84,6 +91,7 @@ async function toggleOrderModal(row = null, orderData = null) {
     const modalContent = modal.querySelector('div'); // Основной контейнер модального окна
     const closeModalButton = document.getElementById('close-orders-modal');
     const loaderOpen = document.getElementById('loading-spinner');
+    const loaderMaterial = document.getElementById('materials-loader');
 
     const orderId = row.dataset.id;
 
@@ -99,13 +107,13 @@ async function toggleOrderModal(row = null, orderData = null) {
     modalContent.style.width = modalWidth;
     modalContent.style.minHeight = minModalHeight; // Устанавливаем минимальную высоту
     modalContent.style.position = 'absolute';
-    // modalContent.style.left = `calc(50% + ${modalHorizontalOffset})`;
     modalContent.style.left = '50%';
     modalContent.style.top = `calc(50% + ${modalVerticalOffset})`;
     modalContent.style.transform = 'translate(-50%, 0)';
-    modalContent.style.maxHeight = '780px';
+    modalContent.style.maxHeight = '900px';
 
     loaderOpen.classList.remove('hidden');
+    loaderMaterial.classList.remove('hidden');
 
     let data = orderData;
 
@@ -169,6 +177,8 @@ async function toggleOrderModal(row = null, orderData = null) {
 
 // Загрузка данных заказа - вкладка "Товары"
 async function loadProductTab(orderId, loaderOpen, data) {
+    const loaderMaterial = document.getElementById('materials-loader');
+
     try {
         const tableBody = document.getElementById('order-items-table');
         tableBody.innerHTML = '';
@@ -195,12 +205,13 @@ async function loadProductTab(orderId, loaderOpen, data) {
 
             // Добавляем обработчик клика на строку
             itemRow.addEventListener('click', () => {
-                // const displaySpan = document.getElementById('order-and-component-display');
-                // if (displaySpan) {
-                //     displaySpan.textContent = `orderId: ${orderId}, itemId: ${itemRow.dataset.itemId}`;
-                // }
 
-                // Грузим таблицу с материалами по фильтру из клика на строку заказа
+                // Подсветка
+                clearSelectionHighlight();
+                itemRow.classList.add('!bg-emerald-100');
+                itemRow.dataset.selected = 'true';
+
+                loaderMaterial.classList.remove('hidden');
                 loadMaterialsTable(orderId, itemRow.dataset.itemId);
 
             });
@@ -248,12 +259,9 @@ async function loadProductTab(orderId, loaderOpen, data) {
         // Красим зеброй таблицу
         const itemRows = document.querySelectorAll('#order-items-table .product-row');
         itemRows.forEach((row, index) => {
+            if (row.dataset.selected) return;
             row.classList.remove('bg-gray-50', 'bg-white');
-            if (index % 2 === 1) {
-                row.classList.add('bg-gray-50');
-            } else {
-                row.classList.add('bg-white');
-            }
+            row.classList.add(index % 2 === 1 ? 'bg-gray-50' : 'bg-white');
         });
 
     } catch (error) {
@@ -290,6 +298,7 @@ async function loadSpecsForItem(orderId, itemId) {
     } catch (error) {
         specContainer.innerHTML = '<p class="text-red-500">Ошибка загрузки</p>';
     }
+
 }
 
 // Отрисовка дерева
@@ -329,27 +338,35 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
         node.className = 'text-xs bg-gray-100 flex justify-between p-1 text-gray-600 hover:text-emerald-500'; // классы для оформления дерева
         node.style.paddingLeft = `${level * options.baseIndent * options.indentMultiplier}${options.indentUnit}`;
 
-        // ТЕСТ
         node.dataset.componentId = item.ComponentDbId;
         node.dataset.path = item.Path || '';
-        node.classList.add('cursor-pointer', 'hover:text-emerald-500');
-        node.addEventListener('click', (e) => {
-            if (e.target.classList.contains('toggle-node')) return;
 
-            const display = document.getElementById('order-and-component-display');
-            const orderId = document.getElementById('ordermodal').dataset.orderId;
-            const path = node.dataset.path || '';
+        // Добавляем cursor-pointer только если есть дети
+        const hasChildren = item.children && item.children.length > 0;
+        if (hasChildren) {
+            node.classList.add('cursor-pointer');
 
-            // Подсветка
-            document.querySelectorAll('.spec-node > div').forEach(el => {
-                el.classList.remove('bg-emerald-100', 'text-emerald-700');
+            // Добавляем обработчик клика только для элементов с детьми
+            node.addEventListener('click', (e) => {
+                if (e.target.classList.contains('toggle-node')) return;
+
+                // Удаляем подсветку со всех ранее выбранных
+                document.querySelectorAll('.bg-emerald-100').forEach(el => el.classList.remove('bg-emerald-100'));
+
+                // Подсветка
+                clearSelectionHighlight();
+                node.classList.add('!bg-emerald-100');
+                node.dataset.selected = 'true';
+
+                const orderId = document.getElementById('ordermodal').dataset.orderId;
+                const path = node.dataset.path || '';
+
+                loadMaterialsTable(orderId, null, path);
             });
-            node.classList.add('bg-emerald-100', 'text-emerald-700');
-
-            // Грузим таблицу с материалами по фильтру из клика на строку дерева
-            loadMaterialsTable(orderId, null, path);
-
-        });
+        } else {
+            // Стиль для элементов без детей
+            node.classList.add('opacity-80');
+        }
 
         const spanLeft = document.createElement('span');
         spanLeft.className = 'flex items-center gap-2';
@@ -405,6 +422,8 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
 
 // Таблица с материалами
 async function loadMaterialsTable(orderId, itemId = null, path = '') {
+    const loaderMaterial = document.getElementById('materials-loader');
+
     let endpoint = itemId
         ? `/orders/getFlatMaterials/${orderId}/item/${itemId}/`
         : `/orders/getFlatMaterials/${orderId}/`;
@@ -417,6 +436,7 @@ async function loadMaterialsTable(orderId, itemId = null, path = '') {
     materialTableBody.innerHTML = '';
 
     try {
+
         // console.log('Запрос к:', endpoint);  // ← для отладки
         const response = await fetch(endpoint);
         const data = await response.json();
@@ -433,10 +453,13 @@ async function loadMaterialsTable(orderId, itemId = null, path = '') {
 
             materialTableBody.appendChild(row);
         });
+
     } catch (error) {
         materialTableBody.innerHTML = `<tr><td colspan="2" class="text-red-500">Ошибка загрузки</td></tr>`;
         console.error('Ошибка загрузки материалов:', error);
     }
+
+    loaderMaterial.classList.add('hidden');
 }
 
 

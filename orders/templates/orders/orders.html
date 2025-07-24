@@ -11,8 +11,8 @@
         </div>
     
         <!-- Модальное окно "Детали заказа покупателя" -->
-        <div id="ordermodal" class="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center hidden z-40">
-            <div class="bg-white p-6 rounded-lg max-w-[1520px] w-full shadow-lg shadow-gray-700 relative">
+        <div id="ordermodal" class="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center hidden z-40 overflow-y-auto">
+            <div class="bg-white p-6 rounded-lg max-w-[1520px] w-full max-h-[850px] shadow-lg shadow-gray-700 relative">
 
                 <!-- Кнопка закрытия -->
                 <button id="close-orders-modal" class="absolute top-2 right-2 p-2">
@@ -34,26 +34,41 @@
                         <span class="font-normal text-sm">₽ с НДС</span>
                     </h2>
                 </div>
-                
+
                 <div class="modal-content flex gap-6 px-4">
 
                     <!-- Левая часть модального окна-->
                     <div class="flex-[0_0_800px]">
-                        
+
                         <!-- Вкладки -->
-                        <div class="mb-4 border-b border-gray-300 flex space-x-4">
-                            <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="products-tab">
-                                Товары (<span id="max-line-number">0</span>)
-                            </button>
-                            <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="services-tab">
-                                Услуги
+{#                        <div class="mb-4 border-b border-gray-300 flex space-x-4">#}
+{#                            <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="products-tab">#}
+{#                                Товары (<span id="max-line-number">0</span>)#}
+{#                            </button>#}
+{#                            <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="services-tab">#}
+{#                                Услуги#}
+{#                            </button>#}
+{#                        </div>#}
+                        <div class="mb-4 border-b border-gray-300 flex items-center justify-between">
+                            <div class="flex space-x-4">
+                                <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="products-tab">
+                                    Товары (<span id="max-line-number">0</span>)
+                                </button>
+                                <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="services-tab">
+                                    Услуги
+                                </button>
+                            </div>
+
+                            <!-- Кнопка сброса фильтра -->
+                            <button type="button" class="text-gray-500 hover:text-emerald-600" title="Сбросить" id="reset-filter-btn">
+                                <img src="{% static 'icons/clear2.ico' %}" alt="Clear" class="w-6 h-6">
                             </button>
                         </div>
                         
                         <!-- Контент вкладок -->
                         <div class="tab-content" id="products-tab">
-                            <div class="overflow-y-auto pr-2 scrollbar-custom max-h-[59vh] mt-2">
-{#                                <table class="my-table w-full">#}
+                            <!-- Таблица с деревом -->
+                            <div class="overflow-y-auto pr-2 scrollbar-custom max-h-[67vh] mt-1">
                                 <table class="w-full">
                                     <thead class="sticky top-0 bg-white">
                                     <tr class="border-b border-gray-300">
@@ -75,13 +90,13 @@
                         <div class="tab-content hidden" id="services-tab">
                             <p class="text-sm text-gray-500">Здесь будут перечислены услуги...</p>
                         </div>
-                        
+
                     </div>
 
                     <!-- Вертикальная линия -->
                     <div class="w-px bg-gradient-to-b from-gray-300 via-gray-400 to-gray-300 min-h-[350px]"></div>
-                    
-                    <!-- Правая часть модального окна-->
+
+                    <!-- Правая часть модального окна-->        
                     <div class="flex-1 flex flex-col">
 
                         <!-- Вкладки -->
@@ -96,16 +111,17 @@
                                 Операции
                             </button>
                         </div>
-                        
+
                         <!-- Контент вкладок -->
                         <div class="second-tab-content hidden" id="dashboard-tab">
                             <p class="text-sm text-gray-500">Здесь будет красивый дашборд...</p>
                         </div>
-                        
+
                         <div class="second-tab-content hidden" id="material-tab">
                             
                             <!-- Поиск, сортировка, фильтр -->
                             <div class="flex items-center justify-between bg-gray-100 p-2 rounded">
+                                
                                 
                                 <!-- Поиск -->
                                 <div class="flex items-center space-x-2">
@@ -126,11 +142,17 @@
                                         <img src="{% static 'icons/filter.ico' %}" alt="Filter" class="w-4 h-4">
                                     </button>
                                 </div>
-                                
+
                             </div>
-                            
+
                             <!-- Таблица материалов -->
-                            <div class="overflow-y-auto pr-2 scrollbar-custom max-h-[59vh] mt-2">
+                            <div class="relative overflow-y-auto pr-2 scrollbar-custom max-h-[62vh] min-h-[200px] mt-2">
+
+                                <!-- Лоадер -->
+                                <div id="materials-loader" class="absolute inset-0 flex justify-center items-center bg-white z-10 hidden">
+                                    <div class="loader border-4 border-t-transparent border-emerald-500 rounded-full w-12 h-12 animate-spin"></div>
+                                </div>
+                                
                                 <table class="w-full">
                                     <thead class="sticky top-0 bg-white">
                                     <tr class="border-b border-gray-300">
@@ -145,15 +167,15 @@
                                     </tbody>
                                 </table>
                             </div>
-                            
+
                         </div>
-                        
+
                         <div class="second-tab-content hidden" id="job-tab">
                             <p class="text-sm text-gray-500">Здесь будет таблица с операциями, строка поиска, фильтры и сортировка</p>
                         </div>
-                        
+
                     </div>
-                    
+
                 </div>
             </div>
         </div>
@@ -235,9 +257,9 @@
                 <div class="overflow-y-auto pr-2 scrollbar-custom mt-4" style="max-height: 605px; scrollbar-gutter: stable;">
                     <div class="relative min-h-[200px]">
                         <!-- Лоадер -->
-                        <div id="specs-loader" class="absolute inset-0 flex justify-center items-center bg-white z-10 hidden">
-                            <div class="loader border-4 border-t-transparent border-emerald-500 rounded-full w-12 h-12 animate-spin"></div>
-                        </div>
+{#                        <div id="specs-loader" class="absolute inset-0 flex justify-center items-center bg-white z-10 hidden">#}
+{#                            <div class="loader border-4 border-t-transparent border-emerald-500 rounded-full w-12 h-12 animate-spin"></div>#}
+{#                        </div>#}
 
                         <table id="specs-table" class="my-table w-full min-w-[800px]">
                             <thead class="sticky top-0 bg-white">
@@ -280,9 +302,7 @@
                 </button>
             </div>
         
-{#            <a href="?clear_cache=true" class="btn btn-danger">Очистить кэш страницы</a>#}
-
-
+        
             <table class="my-table mt-4 w-full" id="ordersTable">
                 <thead>
                 <tr>
