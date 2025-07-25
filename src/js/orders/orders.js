@@ -1,4 +1,7 @@
 const orderCache = {};
+let activeTabId = null;
+let isItemSelected = false;
+let currentOrderData = null;
 
 // Универсальная функция-загрузчик (для применения в нескольких функция, чтобы избежать дублирование кода)
 async function fetchOrderDetails(orderId, refresh = false) {
@@ -30,7 +33,11 @@ async function fetchOrderDetails(orderId, refresh = false) {
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const targetTabId = btn.dataset.tab;
+        activeTabId = targetTabId;
+
+        console.log('Слушатель:', targetTabId)
         const targetContent = document.getElementById(targetTabId);
+
 
         // 1. Скрыть ВЕСЬ контент вкладок
         document.querySelectorAll('.tab-content').forEach(tab => {
@@ -48,6 +55,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
         btn.classList.remove('border-transparent');
         btn.classList.add('border-emerald-500');
+
+        updateResetFilterButtonVisibility();
+
     });
 });
 
@@ -76,12 +86,48 @@ document.querySelectorAll('.second-tab-btn').forEach(btn => {
     });
 });
 
+// Клик для кнопки "сбросить выделения"
+document.getElementById('reset-filter-btn').addEventListener('click', () => {
+    const orderId = document.getElementById('ordermodal').dataset.orderId;
+    const loaderMaterial = document.getElementById('materials-loader');
+    const loaderOpen = document.getElementById('loading-spinner');
+
+    // Удалить выделение
+    clearSelectionHighlight();
+
+    if (!currentOrderData) {
+        console.error('Данные заказа не сохранены');
+        return;
+    }
+
+    loaderMaterial.classList.remove('hidden');
+    loadMaterialsTable(orderId, null);
+    loadProductTab(orderId, loaderOpen, currentOrderData);
+
+});
+
+
 // Функция для очистки выделения цветом
 function clearSelectionHighlight() {
     document.querySelectorAll('[data-selected="true"]').forEach(el => {
         el.classList.remove('!bg-emerald-100');
         delete el.dataset.selected;
     });
+
+    isItemSelected = false;
+    updateResetFilterButtonVisibility(); // Обновляем видимость кнопки
+
+}
+
+// Функция для показа кнопки "сбросить выделения"
+function updateResetFilterButtonVisibility() {
+    const resetBtn = document.getElementById('reset-filter-btn');
+    if (activeTabId === 'products-tab' && isItemSelected) {
+        resetBtn.classList.remove('hidden');
+    } else {
+        resetBtn.classList.add('hidden');
+    }
+
 }
 
 // Открытие модального окна с составом "Заказа покупателя"
@@ -100,7 +146,7 @@ async function toggleOrderModal(row = null, orderData = null) {
     // Настройки размеров
     // const modalHorizontalOffset = '-450px';
     const modalVerticalOffset = '-380px';
-    const modalWidth = '1520px';
+    const modalWidth = '1680px';
     const minModalHeight = '350px'; // Минимальная высота модального окна
 
     // Позиционирование (фиксируем верхнюю границу)
@@ -122,6 +168,8 @@ async function toggleOrderModal(row = null, orderData = null) {
         }
         if (!data) return;
 
+        currentOrderData = data;
+
     document.getElementById('order-number-display').textContent = data.number;
     document.getElementById('order-date-display').textContent = data.date_of_formation;
     document.getElementById('order-buyer-display').textContent = data.buyer;
@@ -142,7 +190,11 @@ async function toggleOrderModal(row = null, orderData = null) {
     });
 
     productsTabBtn.click(); // Переключаем на вкладку "Товары"
-    // Конец
+
+    // При открытии окна ни одна строка не выделена, указываем это в переменной и запускаем проверку для видимости кнопки "сбросить выделения"
+    isItemSelected = false;
+    updateResetFilterButtonVisibility();
+
 
     // Активация вкладки "Дашборд" в правой части окна
     // Вкладка "Дашборд" выбирается по умолчанию
@@ -210,6 +262,10 @@ async function loadProductTab(orderId, loaderOpen, data) {
                 clearSelectionHighlight();
                 itemRow.classList.add('!bg-emerald-100');
                 itemRow.dataset.selected = 'true';
+
+                // Указываем в переменной факт клика и запускаем проверку для видимости кнопки "сбросить выделения"
+                isItemSelected = true;
+                updateResetFilterButtonVisibility();
 
                 loaderMaterial.classList.remove('hidden');
                 loadMaterialsTable(orderId, itemRow.dataset.itemId);
@@ -357,6 +413,10 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
                 clearSelectionHighlight();
                 node.classList.add('!bg-emerald-100');
                 node.dataset.selected = 'true';
+
+                // Указываем в переменной факт клика по дереву и запускаем проверку для видимости кнопки "сбросить выделения"
+                isItemSelected = true;
+                updateResetFilterButtonVisibility();
 
                 const orderId = document.getElementById('ordermodal').dataset.orderId;
                 const path = node.dataset.path || '';

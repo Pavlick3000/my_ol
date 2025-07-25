@@ -12,13 +12,21 @@
     
         <!-- Модальное окно "Детали заказа покупателя" -->
         <div id="ordermodal" class="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center hidden z-40 overflow-y-auto">
-            <div class="bg-white p-6 rounded-lg max-w-[1520px] w-full max-h-[850px] shadow-lg shadow-gray-700 relative">
+            <div class="bg-white p-6 rounded-lg max-w-[1680px] w-full max-h-[850px] shadow-lg shadow-gray-700 relative">
 
                 <!-- Кнопка закрытия -->
-                <button id="close-orders-modal" class="absolute top-2 right-2 p-2">
-                    <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
-                </button>
+                <div class="absolute top-2 right-2 group inline-flex items-center">
+                    <!-- Тултип -->
+                    <div class="absolute right-full mr-0 top-1/2 -translate-y-1/2 px-2 py-1 rounded-lg text-sm text-white bg-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 whitespace-nowrap">
+                        Закрыть
+                    </div>
+                    <!-- Кнопка -->
+                    <button id="close-orders-modal" class="p-2">
+                        <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
+                    </button>
+                </div>
 
+                
                 <!-- Заголовок -->
                 <div class="mb-4">
                     <!-- Номер заказа, дата, наименование покупателя и сумма -->
@@ -41,14 +49,6 @@
                     <div class="flex-[0_0_800px]">
 
                         <!-- Вкладки -->
-{#                        <div class="mb-4 border-b border-gray-300 flex space-x-4">#}
-{#                            <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="products-tab">#}
-{#                                Товары (<span id="max-line-number">0</span>)#}
-{#                            </button>#}
-{#                            <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="services-tab">#}
-{#                                Услуги#}
-{#                            </button>#}
-{#                        </div>#}
                         <div class="mb-4 border-b border-gray-300 flex items-center justify-between">
                             <div class="flex space-x-4">
                                 <button type="button" class="tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="products-tab">
@@ -60,9 +60,16 @@
                             </div>
 
                             <!-- Кнопка сброса фильтра -->
-                            <button type="button" class="text-gray-500 hover:text-emerald-600" title="Сбросить" id="reset-filter-btn">
-                                <img src="{% static 'icons/clear2.ico' %}" alt="Clear" class="w-6 h-6">
-                            </button>
+                            <div class="relative">
+                                <button type="button" class="group text-gray-500 hover:text-emerald-600 hidden" id="reset-filter-btn">
+                                    <img src="{% static 'icons/clear.ico' %}" alt="Clear" class="w-6 h-6">
+                                    <!-- Тултип -->
+                                    <div class="absolute top-[40%] right-full mr-2 -translate-y-1/2 px-2 py-1 rounded-lg text-sm text-white bg-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 whitespace-nowrap">
+                                        Сбросить выделение
+                                    </div>
+                                </button>
+                            </div>
+                            
                         </div>
                         
                         <!-- Контент вкладок -->
