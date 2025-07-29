@@ -37,6 +37,13 @@ function clearInput(searchInputId, filterFunction) {
     filterFunction(); // Вызываем переданную функцию фильтрации
 }
 
+function clearInputMaterials(id) {
+    const input = document.getElementById(id);
+    input.value = '';
+    input.dispatchEvent(new Event('input')); // чтобы обновить таблицу
+}
+
+
 // Функция обновления данных таблицы при изменении записей
 function updateTableRow(updatedProduct) {
     // Найти строку по data-id

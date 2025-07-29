@@ -242,6 +242,7 @@ def findSpecSubtreeByItemId(tree, itemId, level=0):
 def getFlatMaterials(request, orderId, itemId=None):
     try:
         node_path = request.GET.get('path')  # получаем path из query-параметра
+        category_name = request.GET.get('category') # получаем category из query-параметра
 
         # Если path задан и itemId не передан, то берем первый ID из path
         if node_path and not itemId:
@@ -290,7 +291,25 @@ def getFlatMaterials(request, orderId, itemId=None):
             # Группировка одинаковых материалов
             result = group_flat_materials(leaf_rows, columns)
 
-        return JsonResponse({'items': result})
+            unique_categories = sorted(set(
+                row[columns.index('CategoryName')]
+                for row in rows
+                if row[columns.index('CategoryName')] is not None
+
+            ))
+
+            # Фильтрация по категории
+            if category_name:
+                result = [
+                    item for item in result
+                    if item.get('CategoryName') == category_name
+                ]
+
+        return JsonResponse({
+            'items': result,
+            'categories': unique_categories,
+        })
+
     except Exception as e:
         print(f"Exception in getFlatMaterials: {e}")
         return JsonResponse({'error': str(e)}, status=500)

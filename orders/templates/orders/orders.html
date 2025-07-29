@@ -25,7 +25,6 @@
                         <img src="{% static 'icons/close.ico' %}" alt="Close" class="w-6 h-6">
                     </button>
                 </div>
-
                 
                 <!-- Заголовок -->
                 <div class="mb-4">
@@ -43,6 +42,7 @@
                     </h2>
                 </div>
 
+                <!-- Содержание окна -->
                 <div class="modal-content flex gap-6 px-4">
 
                     <!-- Левая часть модального окна-->
@@ -129,25 +129,44 @@
                             <!-- Поиск, сортировка, фильтр -->
                             <div class="flex items-center justify-between bg-gray-100 p-2 rounded">
                                 
-                                
                                 <!-- Поиск -->
                                 <div class="flex items-center space-x-2">
                                     <img src="{% static 'icons/search.ico' %}" alt="Search" class="w-6 h-6">
-                                    <input type="text" placeholder="Поиск" class="bg-transparent focus:outline-none text-sm placeholder-gray-400">
+                                    <input 
+                                            id="searchInputMaterials" 
+                                            type="text" 
+                                            placeholder="Поиск" 
+                                            class="bg-transparent focus:outline-none text-sm placeholder-gray-400">
                                 </div>
 
                                 <!-- Сортировка и фильтр -->
                                 <div class="flex items-center space-x-4 text-gray-500 text-sm">
+                                    <button class="flex items-center space-x-1 hover:text-gray-700"
+                                        type="button"
+                                        onclick="clearInputMaterials('searchInputMaterials')">
+                                        <img src="{% static 'icons/close2.ico' %}" alt="Sort" class="w-4 h-4">
+                                    </button>
+                                    <!-- Вертикальная черта -->
+                                    <div class="h-4 border-l border-gray-300"></div>
                                     <!-- Сортировка-->
                                     <button class="flex items-center space-x-1 hover:text-gray-700">
                                         <img src="{% static 'icons/sort.ico' %}" alt="Sort" class="w-4 h-4">
                                     </button>
                                     <!-- Вертикальная черта -->
                                     <div class="h-4 border-l border-gray-300"></div>
+                                    
                                     <!-- Фильтр -->
-                                    <button class="flex items-center space-x-1 hover:text-gray-700">
-                                        <img src="{% static 'icons/filter.ico' %}" alt="Filter" class="w-4 h-4">
-                                    </button>
+                                    <div class="relative">
+                                        <button id="CategoryFilterMaterials" class="flex items-center space-x-1 hover:text-gray-700">
+                                            <img src="{% static 'icons/filter.ico' %}" alt="Filter" class="w-4 h-4">
+                                        </button>
+                                        <div id="categoryDropdown"
+                                            class="absolute hidden left-1/2 transform -translate-x-1/2 mt-4 bg-white shadow-md border rounded z-10 text-sm
+                                                    scrollbar-custom max-h-[60vh] overflow-y-auto w-48">
+                                            <div class="cursor-pointer px-4 py-2 hover:bg-gray-100" data-category="">Все категории</div>
+                                            <!-- Остальные категории будут добавлены через JS -->
+                                        </div>
+                                    </div>
                                 </div>
 
                             </div>

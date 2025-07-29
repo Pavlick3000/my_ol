@@ -2,6 +2,8 @@ const orderCache = {};
 let activeTabId = null;
 let isItemSelected = false;
 let currentOrderData = null;
+let selectedCategory = ''; // сохраняем выбранную категорию
+let currentOrderId = null;
 
 // Универсальная функция-загрузчик (для применения в нескольких функция, чтобы избежать дублирование кода)
 async function fetchOrderDetails(orderId, refresh = false) {
@@ -95,6 +97,9 @@ document.getElementById('reset-filter-btn').addEventListener('click', () => {
     // Удалить выделение
     clearSelectionHighlight();
 
+    // Для очистки поля поиска таблицы "материалы"
+    clearInputMaterials('searchInputMaterials');
+
     if (!currentOrderData) {
         console.error('Данные заказа не сохранены');
         return;
@@ -104,8 +109,9 @@ document.getElementById('reset-filter-btn').addEventListener('click', () => {
     loadMaterialsTable(orderId, null);
     loadProductTab(orderId, loaderOpen, currentOrderData);
 
-});
 
+
+});
 
 // Функция для очистки выделения цветом
 function clearSelectionHighlight() {
@@ -140,6 +146,7 @@ async function toggleOrderModal(row = null, orderData = null) {
     const loaderMaterial = document.getElementById('materials-loader');
 
     const orderId = row.dataset.id;
+    currentOrderId = orderId;
 
     modal.dataset.orderId = orderId; // Сохраняем ID заказа в модальном окне// document.getElementById('order-and-component-display').textContent = `#${orderId} / Компонент: -`;
 
@@ -268,7 +275,11 @@ async function loadProductTab(orderId, loaderOpen, data) {
                 updateResetFilterButtonVisibility();
 
                 loaderMaterial.classList.remove('hidden');
-                loadMaterialsTable(orderId, itemRow.dataset.itemId);
+
+                loadMaterialsTable(orderId, itemRow.dataset.itemId).then(() => {
+                    // После загрузки — фильтрация
+                    filterMaterialsTable('searchInputMaterials', 'materials-table-body');
+                });
 
             });
 
@@ -481,23 +492,37 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
 }
 
 // Таблица с материалами
-async function loadMaterialsTable(orderId, itemId = null, path = '') {
+async function loadMaterialsTable(orderId, itemId = null, path = '', selectedCategory = '') {
     const loaderMaterial = document.getElementById('materials-loader');
-
-    let endpoint = itemId
-        ? `/orders/getFlatMaterials/${orderId}/item/${itemId}/`
-        : `/orders/getFlatMaterials/${orderId}/`;
-
-    if (path) {
-        endpoint += `?path=${encodeURIComponent(path)}`;
-    }
-
     const materialTableBody = document.getElementById('materials-table-body');
+    const categoryDropdown = document.getElementById('categoryDropdown');
+
+    loaderMaterial.classList.remove('hidden');
     materialTableBody.innerHTML = '';
 
-    try {
+    // Сохраняем базовый пункт "Все категории"
+    const baseOption = document.createElement('div');
+    baseOption.className = 'cursor-pointer px-4 py-2 hover:bg-gray-100';
+    baseOption.dataset.category = '';
+    baseOption.textContent = 'Все категории';
 
-        // console.log('Запрос к:', endpoint);  // ← для отладки
+    categoryDropdown.innerHTML = '';
+    categoryDropdown.appendChild(baseOption);
+
+    try {
+        // Сбор query-параметров
+        let endpoint = itemId
+            ? `/orders/getFlatMaterials/${orderId}/item/${itemId}/`
+            : `/orders/getFlatMaterials/${orderId}/`;
+
+        const params = new URLSearchParams();
+        if (path) params.set('path', path);
+        if (selectedCategory) params.set('category', selectedCategory);
+
+        if ([...params].length > 0) {
+            endpoint += `?${params.toString()}`;
+        }
+
         const response = await fetch(endpoint);
         const data = await response.json();
 
@@ -514,14 +539,60 @@ async function loadMaterialsTable(orderId, itemId = null, path = '') {
             materialTableBody.appendChild(row);
         });
 
-    } catch (error) {
-        materialTableBody.innerHTML = `<tr><td colspan="2" class="text-red-500">Ошибка загрузки</td></tr>`;
-        console.error('Ошибка загрузки материалов:', error);
-    }
+        // Получение и отрисовка уникальных категорий
+        const categories = Array.isArray(data.categories) ? data.categories : [];
 
-    loaderMaterial.classList.add('hidden');
+        categories.forEach(category => {
+            const option = document.createElement('div');
+            option.className = 'cursor-pointer px-4 py-2 hover:bg-gray-100';
+            option.dataset.category = category;
+            option.textContent = category;
+            categoryDropdown.appendChild(option);
+        });
+
+        // Навешиваем клики
+        categoryDropdown.querySelectorAll('div[data-category]').forEach(item => {
+            item.addEventListener('click', function () {
+                selectedCategory = this.dataset.category;
+                document.getElementById('categoryDropdown').classList.add('hidden');
+
+                const selectedRow = document.querySelector('.product-row[data-selected="true"]');
+                const selectedItemId = selectedRow ? selectedRow.dataset.itemId : null;
+
+                loadMaterialsTable(currentOrderId, selectedItemId, '', selectedCategory).then(() => {
+                    filterMaterialsTable('searchInputMaterials', 'materials-table-body');
+                });
+            });
+        });
+
+    } catch (error) {
+        materialTableBody.innerHTML = `<tr><td colspan="3" class="text-red-500">Ошибка загрузки</td></tr>`;
+        console.error('Ошибка загрузки материалов:', error);
+    } finally {
+        loaderMaterial.classList.add('hidden');
+    }
 }
 
+// Функция поиска таблицы "Материалы"
+function filterMaterialsTable(inputId, tableBodyId) {
+    const searchTerm = document.getElementById(inputId).value.toLowerCase();
+    const rows = document.querySelectorAll(`#${tableBodyId} tr`);
+
+    rows.forEach(row => {
+        const componentName = row.children[0].textContent.toLowerCase(); // первая колонка
+        row.style.display = componentName.includes(searchTerm) ? '' : 'none';
+    });
+}
+
+// Слушатель поля поиск таблицы "Материалы"
+document.getElementById('searchInputMaterials').addEventListener('input', function () {
+    filterMaterialsTable('searchInputMaterials', 'materials-table-body');
+});
+
+// Слушатель кнопки "фильтр"
+document.getElementById('CategoryFilterMaterials').addEventListener('click', function () {
+    document.getElementById('categoryDropdown').classList.toggle('hidden');
+});
 
 
 

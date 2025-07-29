@@ -121,18 +121,25 @@ def group_flat_materials(rows, columns):
         key = (
             row_dict.get('ComponentName'),
             row_dict.get('basic_unit'),
+            row_dict.get('CategoryName'),
         )
 
         group = grouped[key]
         group['ComponentName'] = row_dict.get('ComponentName')
         group['basic_unit'] = row_dict.get('basic_unit')
         group['TotalQuantity'] += row_dict.get('TotalQuantity') or Decimal(0)
+        group['CategoryName'] = row_dict.get('CategoryName')
+
+        # Сохраняем CategoryName только если еще не сохранена
+        if group['CategoryName'] is None:
+            group['CategoryName'] = row_dict.get('CategoryName')
 
     return [
         {
             'ComponentName': k[0],
             'basic_unit': k[1],
             'TotalQuantity': float(v['TotalQuantity']),
+            'CategoryName': v['CategoryName'],
         }
         for k, v in grouped.items()
     ]
