@@ -293,7 +293,8 @@ def getFlatMaterials(request, orderId, itemId=None):
 
             unique_categories = sorted(set(
                 row[columns.index('CategoryName')]
-                for row in rows
+                # for row in rows
+                for row in leaf_rows # из категорий листовых элементов
                 if row[columns.index('CategoryName')] is not None
 
             ))

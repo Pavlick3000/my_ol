@@ -59,16 +59,10 @@
                                 </button>
                             </div>
 
-                            <!-- Кнопка сброса фильтра -->
-                            <div class="relative">
-                                <button type="button" class="group text-gray-500 hover:text-emerald-600 hidden" id="reset-filter-btn">
-                                    <img src="{% static 'icons/clear.ico' %}" alt="Clear" class="w-6 h-6">
-                                    <!-- Тултип -->
-                                    <div class="absolute top-[40%] right-full mr-2 -translate-y-1/2 px-2 py-1 rounded-lg text-sm text-white bg-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 whitespace-nowrap">
-                                        Сбросить выделение
-                                    </div>
-                                </button>
-                            </div>
+                            <!-- Кнопка сброса выделения строки -->
+                            <button type="button" class="group hidden bg-gray-100 font-semibold text-emerald-600 hover:bg-gray-200 px-3 py-1 rounded-md text-xs transition-colors duration-200" id="reset-select-btn">
+                                Сбросить выделение
+                            </button>
                             
                         </div>
                         
@@ -107,16 +101,24 @@
                     <div class="flex-1 flex flex-col">
 
                         <!-- Вкладки -->
-                        <div class="mb-4 border-b border-gray-300 flex space-x-4">
-                            <button type="button" class="second-tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="dashboard-tab">
-                                Сводка
+                        <div class="mb-4 border-b border-gray-300 flex items-center justify-between">
+                            <div class="flex space-x-4">
+                                <button type="button" class="second-tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="dashboard-tab">
+                                    Сводка
+                                </button>
+                                <button type="button" class="second-tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="material-tab">
+                                    Материалы
+                                </button>
+                                <button type="button" class="second-tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="job-tab">
+                                    Операции
+                                </button>
+                            </div>
+                            
+                            <!-- Кнопка сброса фильтра -->
+                            <button type="button" class="group hidden bg-gray-100 font-semibold text-emerald-600 hover:bg-gray-200 px-3 py-1 rounded-md text-xs transition-colors duration-200" id="reset-filter-btn">
+                                Сбросить фильтр
                             </button>
-                            <button type="button" class="second-tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="material-tab">
-                                Материалы
-                            </button>
-                            <button type="button" class="second-tab-btn text-sm py-2 px-4 border-b-2 border-transparent hover:border-emerald-500" data-tab="job-tab">
-                                Операции
-                            </button>
+                            
                         </div>
 
                         <!-- Контент вкладок -->
@@ -146,12 +148,15 @@
                                         onclick="clearInputMaterials('searchInputMaterials')">
                                         <img src="{% static 'icons/close2.ico' %}" alt="Sort" class="w-4 h-4">
                                     </button>
+                                    
                                     <!-- Вертикальная черта -->
                                     <div class="h-4 border-l border-gray-300"></div>
+                                    
                                     <!-- Сортировка-->
                                     <button class="flex items-center space-x-1 hover:text-gray-700">
                                         <img src="{% static 'icons/sort.ico' %}" alt="Sort" class="w-4 h-4">
                                     </button>
+                                    
                                     <!-- Вертикальная черта -->
                                     <div class="h-4 border-l border-gray-300"></div>
                                     
@@ -160,13 +165,17 @@
                                         <button id="CategoryFilterMaterials" class="flex items-center space-x-1 hover:text-gray-700">
                                             <img src="{% static 'icons/filter.ico' %}" alt="Filter" class="w-4 h-4">
                                         </button>
+                                        
                                         <div id="categoryDropdown"
                                             class="absolute hidden left-1/2 transform -translate-x-1/2 mt-4 bg-white shadow-md border rounded z-10 text-sm
-                                                    scrollbar-custom max-h-[60vh] overflow-y-auto w-48">
-                                            <div class="cursor-pointer px-4 py-2 hover:bg-gray-100" data-category="">Все категории</div>
+                                                    scrollbar-custom max-h-[62vh] overflow-y-auto w-48">
                                             <!-- Остальные категории будут добавлены через JS -->
                                         </div>
                                     </div>
+                                    
+                                    <!-- Лейбл с выбранной категорией -->
+                                    <div class="text-xs text-emerald-600 font-semibold" id="selectedCategoryLabel"></div>
+                                    
                                 </div>
 
                             </div>

@@ -1,9 +1,13 @@
 const orderCache = {};
-let activeTabId = null;
+let activeTabLeftId = null;
+let activeTabRightId = null;
 let isItemSelected = false;
 let currentOrderData = null;
-let selectedCategory = ''; // сохраняем выбранную категорию
+let currentSelectedItemId = null;
+let activeSelectedCategory = ''; // сохраняем выбранную категорию
 let currentOrderId = null;
+let currentPath = null;
+let selectedCategory = '';
 
 // Универсальная функция-загрузчик (для применения в нескольких функция, чтобы избежать дублирование кода)
 async function fetchOrderDetails(orderId, refresh = false) {
@@ -35,11 +39,8 @@ async function fetchOrderDetails(orderId, refresh = false) {
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const targetTabId = btn.dataset.tab;
-        activeTabId = targetTabId;
-
-        console.log('Слушатель:', targetTabId)
         const targetContent = document.getElementById(targetTabId);
-
+        activeTabLeftId = targetTabId;
 
         // 1. Скрыть ВЕСЬ контент вкладок
         document.querySelectorAll('.tab-content').forEach(tab => {
@@ -58,7 +59,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('border-transparent');
         btn.classList.add('border-emerald-500');
 
-        updateResetFilterButtonVisibility();
+        updateResetSelectButtonVisibility();
 
     });
 });
@@ -68,6 +69,8 @@ document.querySelectorAll('.second-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const targetTabId = btn.dataset.tab;
         const targetContent = document.getElementById(targetTabId);
+        activeTabRightId = targetTabId;
+        console.log('Категория:', activeSelectedCategory)
 
         // 1. Скрыть ВЕСЬ контент вкладок
         document.querySelectorAll('.second-tab-content').forEach(tab => {
@@ -85,17 +88,25 @@ document.querySelectorAll('.second-tab-btn').forEach(btn => {
 
         btn.classList.remove('border-transparent');
         btn.classList.add('border-emerald-500');
+
+        updateResetFilterButtonVisibility();
+
     });
 });
 
 // Клик для кнопки "сбросить выделения"
-document.getElementById('reset-filter-btn').addEventListener('click', () => {
+document.getElementById('reset-select-btn').addEventListener('click', () => {
     const orderId = document.getElementById('ordermodal').dataset.orderId;
     const loaderMaterial = document.getElementById('materials-loader');
     const loaderOpen = document.getElementById('loading-spinner');
 
     // Удалить выделение
     clearSelectionHighlight();
+
+    // Очистить фильтр категории
+    currentSelectedItemId = null;
+    currentPath = null;
+    resetCategoryFilter();
 
     // Для очистки поля поиска таблицы "материалы"
     clearInputMaterials('searchInputMaterials');
@@ -106,12 +117,25 @@ document.getElementById('reset-filter-btn').addEventListener('click', () => {
     }
 
     loaderMaterial.classList.remove('hidden');
-    loadMaterialsTable(orderId, null);
     loadProductTab(orderId, loaderOpen, currentOrderData);
 
-
-
 });
+
+// Функция сброса фильтра по категории
+function resetCategoryFilter() {
+    selectedCategory = '';
+    activeSelectedCategory = '';
+
+    document.getElementById('categoryDropdown')?.classList.add('hidden');
+    document.getElementById('reset-filter-btn')?.classList.add('hidden');
+    document.getElementById('selectedCategoryLabel').textContent = '';
+
+
+    loadMaterialsTable(currentOrderId, currentSelectedItemId, currentPath, selectedCategory).then(() => {
+        filterMaterialsTable('searchInputMaterials', 'materials-table-body');
+    });
+}
+
 
 // Функция для очистки выделения цветом
 function clearSelectionHighlight() {
@@ -121,14 +145,26 @@ function clearSelectionHighlight() {
     });
 
     isItemSelected = false;
-    updateResetFilterButtonVisibility(); // Обновляем видимость кнопки
+    updateResetSelectButtonVisibility(); // Обновляем видимость кнопки
+
 
 }
 
 // Функция для показа кнопки "сбросить выделения"
+function updateResetSelectButtonVisibility() {
+    const resetBtn = document.getElementById('reset-select-btn');
+    if (activeTabLeftId === 'products-tab' && isItemSelected) {
+        resetBtn.classList.remove('hidden');
+    } else {
+        resetBtn.classList.add('hidden');
+    }
+
+}
+
+// Функция для показа кнопки "сбросить фильтр"
 function updateResetFilterButtonVisibility() {
     const resetBtn = document.getElementById('reset-filter-btn');
-    if (activeTabId === 'products-tab' && isItemSelected) {
+    if (activeTabRightId === 'material-tab' && activeSelectedCategory) {
         resetBtn.classList.remove('hidden');
     } else {
         resetBtn.classList.add('hidden');
@@ -200,7 +236,10 @@ async function toggleOrderModal(row = null, orderData = null) {
 
     // При открытии окна ни одна строка не выделена, указываем это в переменной и запускаем проверку для видимости кнопки "сбросить выделения"
     isItemSelected = false;
-    updateResetFilterButtonVisibility();
+    activeSelectedCategory = '';
+    document.getElementById('selectedCategoryLabel').textContent = '';
+    document.getElementById('reset-filter-btn').classList.add('hidden');
+    updateResetSelectButtonVisibility();
 
 
     // Активация вкладки "Дашборд" в правой части окна
@@ -225,6 +264,12 @@ async function toggleOrderModal(row = null, orderData = null) {
     closeModalButton.addEventListener('click', () => modal.classList.add('hidden'));
     modal.addEventListener('click', (e) => e.target === modal && modal.classList.add('hidden'));
     document.addEventListener('keydown', (e) => e.key === 'Escape' && modal.classList.add('hidden'));
+
+    // Закрытие выпадающего списка, на случай если окно было закрыто с развернутым списком.
+    const dropdown = document.getElementById('categoryDropdown');
+        if (dropdown) {
+            dropdown.classList.add('hidden');
+        }
 
     loaderOpen.classList.add('hidden');
 
@@ -272,14 +317,13 @@ async function loadProductTab(orderId, loaderOpen, data) {
 
                 // Указываем в переменной факт клика и запускаем проверку для видимости кнопки "сбросить выделения"
                 isItemSelected = true;
-                updateResetFilterButtonVisibility();
+                updateResetSelectButtonVisibility();
+
+                currentSelectedItemId = item.id;
+                currentPath = null;
+                resetCategoryFilter(); // от сюда мы потом грузим саму таблицу
 
                 loaderMaterial.classList.remove('hidden');
-
-                loadMaterialsTable(orderId, itemRow.dataset.itemId).then(() => {
-                    // После загрузки — фильтрация
-                    filterMaterialsTable('searchInputMaterials', 'materials-table-body');
-                });
 
             });
 
@@ -427,12 +471,14 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
 
                 // Указываем в переменной факт клика по дереву и запускаем проверку для видимости кнопки "сбросить выделения"
                 isItemSelected = true;
-                updateResetFilterButtonVisibility();
+                updateResetSelectButtonVisibility();
 
-                const orderId = document.getElementById('ordermodal').dataset.orderId;
                 const path = node.dataset.path || '';
 
-                loadMaterialsTable(orderId, null, path);
+                currentPath = path;
+                currentSelectedItemId = null;
+                resetCategoryFilter(); // от сюда мы потом грузим саму таблицу
+
             });
         } else {
             // Стиль для элементов без детей
@@ -499,15 +545,7 @@ async function loadMaterialsTable(orderId, itemId = null, path = '', selectedCat
 
     loaderMaterial.classList.remove('hidden');
     materialTableBody.innerHTML = '';
-
-    // Сохраняем базовый пункт "Все категории"
-    const baseOption = document.createElement('div');
-    baseOption.className = 'cursor-pointer px-4 py-2 hover:bg-gray-100';
-    baseOption.dataset.category = '';
-    baseOption.textContent = 'Все категории';
-
     categoryDropdown.innerHTML = '';
-    categoryDropdown.appendChild(baseOption);
 
     try {
         // Сбор query-параметров
@@ -555,15 +593,30 @@ async function loadMaterialsTable(orderId, itemId = null, path = '', selectedCat
             item.addEventListener('click', function () {
                 selectedCategory = this.dataset.category;
                 document.getElementById('categoryDropdown').classList.add('hidden');
+                document.getElementById('reset-filter-btn').classList.remove('hidden');
+
+                activeSelectedCategory = selectedCategory;
+
+                // Отображаем выбранную категорию
+                const label = document.getElementById('selectedCategoryLabel');
+                label.textContent = selectedCategory || '';
 
                 const selectedRow = document.querySelector('.product-row[data-selected="true"]');
                 const selectedItemId = selectedRow ? selectedRow.dataset.itemId : null;
 
-                loadMaterialsTable(currentOrderId, selectedItemId, '', selectedCategory).then(() => {
+                currentPath = path;
+
+                loadMaterialsTable(currentOrderId, selectedItemId, path, selectedCategory).then(() => {
                     filterMaterialsTable('searchInputMaterials', 'materials-table-body');
                 });
             });
         });
+
+        const resetBtn = document.getElementById('reset-filter-btn');
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', resetCategoryFilter);
+        }
 
     } catch (error) {
         materialTableBody.innerHTML = `<tr><td colspan="3" class="text-red-500">Ошибка загрузки</td></tr>`;
