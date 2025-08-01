@@ -741,6 +741,7 @@ function renderTable(items) {
             <td class="px-2 py-1">${item.ComponentName}</td>
             <td class="px-2 py-1 text-center">${parseFloat(item.TotalQuantity).toLocaleString('ru-RU')}</td>
             <td class="px-2 py-1 text-center">${item.basic_unit}</td>
+            <td class="px-2 py-1 text-center text-gray-400">${parseFloat(item.Qnt).toLocaleString('ru-RU')}</td>
         `;
 
         tbody.appendChild(row);

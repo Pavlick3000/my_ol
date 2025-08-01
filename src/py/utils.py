@@ -113,7 +113,15 @@ def sort_tree(items):
 
 # Группировка таблицы материалов
 def group_flat_materials(rows, columns):
-    grouped = defaultdict(lambda: {'TotalQuantity': Decimal(0)})
+    # grouped = defaultdict(lambda: {'TotalQuantity': Decimal(0)})
+
+    grouped = defaultdict(lambda: {
+        'TotalQuantity': Decimal(0),
+        'Qnt': None,
+        'CategoryName': None,
+        'ComponentName': None,
+        'basic_unit': None
+    })
 
     for row in rows:
         row_dict = dict(zip(columns, row))
@@ -125,14 +133,18 @@ def group_flat_materials(rows, columns):
         )
 
         group = grouped[key]
+
         group['ComponentName'] = row_dict.get('ComponentName')
         group['basic_unit'] = row_dict.get('basic_unit')
         group['TotalQuantity'] += row_dict.get('TotalQuantity') or Decimal(0)
-        group['CategoryName'] = row_dict.get('CategoryName')
+        # group['CategoryName'] = row_dict.get('CategoryName')
 
         # Сохраняем CategoryName только если еще не сохранена
-        if group['CategoryName'] is None:
+        if group['CategoryName'] is None and row_dict.get('CategoryName') is not None:
             group['CategoryName'] = row_dict.get('CategoryName')
+
+        if group['Qnt'] is None and row_dict.get('Qnt') is not None:
+            group['Qnt'] = row_dict.get('Qnt')
 
     return [
         {
@@ -140,6 +152,7 @@ def group_flat_materials(rows, columns):
             'basic_unit': k[1],
             'TotalQuantity': float(v['TotalQuantity']),
             'CategoryName': v['CategoryName'],
+            'Qnt': v['Qnt']
         }
         for k, v in grouped.items()
     ]
