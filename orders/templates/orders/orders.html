@@ -63,7 +63,7 @@
                             <button type="button" class="group hidden bg-gray-100 font-semibold text-emerald-600 hover:bg-gray-200 px-3 py-1 rounded-md text-xs transition-colors duration-200" id="reset-select-btn">
                                 Сбросить выделение
                             </button>
-                            
+
                         </div>
                         
                         <!-- Контент вкладок -->
@@ -113,12 +113,12 @@
                                     Операции
                                 </button>
                             </div>
-                            
+
                             <!-- Кнопка сброса фильтра -->
                             <button type="button" class="group hidden bg-gray-100 font-semibold text-emerald-600 hover:bg-gray-200 px-3 py-1 rounded-md text-xs transition-colors duration-200" id="reset-filter-btn">
                                 Сбросить фильтр
                             </button>
-                            
+
                         </div>
 
                         <!-- Контент вкладок -->
@@ -134,10 +134,10 @@
                                 <!-- Поиск -->
                                 <div class="flex items-center space-x-2">
                                     <img src="{% static 'icons/search.ico' %}" alt="Search" class="w-6 h-6">
-                                    <input 
-                                            id="searchInputMaterials" 
-                                            type="text" 
-                                            placeholder="Поиск" 
+                                    <input
+                                            id="searchInputMaterials"
+                                            type="text"
+                                            placeholder="Поиск"
                                             class="bg-transparent focus:outline-none text-sm placeholder-gray-400">
                                 </div>
 
@@ -148,34 +148,39 @@
                                         onclick="clearInputMaterials('searchInputMaterials')">
                                         <img src="{% static 'icons/close2.ico' %}" alt="Sort" class="w-4 h-4">
                                     </button>
-                                    
+
                                     <!-- Вертикальная черта -->
                                     <div class="h-4 border-l border-gray-300"></div>
-                                    
-                                    <!-- Сортировка-->
-                                    <button class="flex items-center space-x-1 hover:text-gray-700">
-                                        <img src="{% static 'icons/sort.ico' %}" alt="Sort" class="w-4 h-4">
-                                    </button>
-                                    
-                                    <!-- Вертикальная черта -->
-                                    <div class="h-4 border-l border-gray-300"></div>
-                                    
+
+{#                                    <!-- Сортировка-->#}
+{#                                    <button class="flex items-center space-x-1 hover:text-gray-700">#}
+{#                                        <img src="{% static 'icons/sort.ico' %}" alt="Sort" class="w-4 h-4">#}
+{#                                    </button>#}
+{##}
+{#                                    <!-- Вертикальная черта -->#}
+{#                                    <div class="h-4 border-l border-gray-300"></div>#}
+
                                     <!-- Фильтр -->
                                     <div class="relative">
                                         <button id="CategoryFilterMaterials" class="flex items-center space-x-1 hover:text-gray-700">
-                                            <img src="{% static 'icons/filter.ico' %}" alt="Filter" class="w-4 h-4">
+                                            <img id="FilterIcon"
+                                                 data-icon-default="{% static 'icons/filter.ico' %}"
+                                                 data-icon-on="{% static 'icons/filterON.ico' %}"
+                                                 src="{% static 'icons/filter.ico' %}"
+                                                 alt="Filter"
+                                                 class="w-4 h-4">
                                         </button>
-                                        
+
                                         <div id="categoryDropdown"
                                             class="absolute hidden left-1/2 transform -translate-x-1/2 mt-4 bg-white shadow-md border rounded z-10 text-sm
                                                     scrollbar-custom max-h-[62vh] overflow-y-auto w-48">
                                             <!-- Остальные категории будут добавлены через JS -->
                                         </div>
                                     </div>
-                                    
+
                                     <!-- Лейбл с выбранной категорией -->
                                     <div class="text-xs text-emerald-600 font-semibold" id="selectedCategoryLabel"></div>
-                                    
+
                                 </div>
 
                             </div>
@@ -191,16 +196,40 @@
                                 <table class="w-full">
                                     <thead class="sticky top-0 bg-white">
                                     <tr class="border-b border-gray-300">
-                                        <th class="w-24 px-2 py-1 font-medium text-sm">Наименование</th>
-                                        <th class="w-10 px-2 py-1 font-medium text-sm">Кол-во</th>
-                                        <th class="w-10 px-2 py-1 font-medium text-sm">Ед.</th>
-
+                                        
+                                        <th class="w-24 px-2 py-1 font-medium text-sm text-center">
+                                            <div class="flex items-center justify-center gap-1">
+                                                <span id="sortByName" class="cursor-pointer hover:text-emerald-500">Наименование</span>
+                                                <img id="iconName"
+                                                     src="{% static 'icons/arrowDown.ico' %}"
+                                                     data-icon-asc="{% static 'icons/arrowDown.ico' %}"
+                                                     data-icon-desc="{% static 'icons/arrowUp.ico' %}"
+                                                     class="w-4 h-4"
+                                                     alt="Sort">
+                                            </div>
+                                        </th>
+                                        
+                                        <th class="w-10 px-2 py-1 font-medium text-sm text-center">
+                                            <div class="flex items-center justify-center gap-1">
+                                                <span id="sortByQuantity" class="cursor-pointer hover:text-emerald-500">Кол-во</span>
+                                                <img id="iconQuantity"
+                                                     src=""
+                                                     data-icon-asc="{% static 'icons/arrowDown.ico' %}"
+                                                     data-icon-desc="{% static 'icons/arrowUp.ico' %}"
+                                                     class="w-4 h-4 hidden"
+                                                     alt="Sort">
+                                            </div>
+                                        </th>
+                                        
+                                        <th class="w-10 px-2 py-1 font-medium text-sm text-center">Ед.</th>
                                     </tr>
+                                    
                                     </thead>
                                     <tbody id="materials-table-body">
                                     <!-- JS вставит строки -->
                                     </tbody>
                                 </table>
+                                
                             </div>
 
                         </div>
@@ -341,13 +370,13 @@
             <table class="my-table mt-4 w-full" id="ordersTable">
                 <thead>
                 <tr>
-                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(1)">id</th>
-                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(0)">Дата</th>
-                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(2)">Заказ покупателя №</th>
-                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(3)">Покупатель</th>
-                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(4)">Сумма</th>
-                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(4)">Отгружен</th>
-                    <th class="cursor-pointer hover:underline hover:text-red-600 font-medium" onclick="sortTable(4)">Оплачен</th>
+                    <th class="cursor-pointer font-medium" onclick="sortTable(1)">id</th>
+                    <th class="cursor-pointer font-medium" onclick="sortTable(0)">Дата</th>
+                    <th class="cursor-pointer font-medium" onclick="sortTable(2)">Заказ покупателя №</th>
+                    <th class="cursor-pointer font-medium" onclick="sortTable(3)">Покупатель</th>
+                    <th class="cursor-pointer font-medium" onclick="sortTable(4)">Сумма</th>
+                    <th class="cursor-pointer font-medium" onclick="sortTable(4)">Отгружен</th>
+                    <th class="cursor-pointer font-medium" onclick="sortTable(4)">Оплачен</th>
                 </tr>
                 </thead>
                 <tbody>

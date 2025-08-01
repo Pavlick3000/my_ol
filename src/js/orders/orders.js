@@ -7,7 +7,12 @@ let currentSelectedItemId = null;
 let activeSelectedCategory = ''; // сохраняем выбранную категорию
 let currentOrderId = null;
 let currentPath = null;
-let selectedCategory = '';
+
+// Переменные для сортировки таблицы "Материалы"
+let currentSortField = 'ComponentName';
+let currentSortDirection = 'asc'; // 'asc' | 'desc'
+let allMaterialData = [];
+
 
 // Универсальная функция-загрузчик (для применения в нескольких функция, чтобы избежать дублирование кода)
 async function fetchOrderDetails(orderId, refresh = false) {
@@ -33,6 +38,23 @@ async function fetchOrderDetails(orderId, refresh = false) {
         console.error('Ошибка загрузки данных заказа:', error);
         return null;
     }
+}
+
+// Сортировка по выбранному полю и направлению
+function sortItems(items) {
+    return items.sort((a, b) => {
+        const valA = currentSortField === 'TotalQuantity'
+            ? parseFloat(a.TotalQuantity)
+            : a.ComponentName.toLowerCase();
+
+        const valB = currentSortField === 'TotalQuantity'
+            ? parseFloat(b.TotalQuantity)
+            : b.ComponentName.toLowerCase();
+
+        if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+        return 0;
+    });
 }
 
 // Вкладки модального окна - левая колонка
@@ -70,7 +92,6 @@ document.querySelectorAll('.second-tab-btn').forEach(btn => {
         const targetTabId = btn.dataset.tab;
         const targetContent = document.getElementById(targetTabId);
         activeTabRightId = targetTabId;
-        console.log('Категория:', activeSelectedCategory)
 
         // 1. Скрыть ВЕСЬ контент вкладок
         document.querySelectorAll('.second-tab-content').forEach(tab => {
@@ -106,6 +127,8 @@ document.getElementById('reset-select-btn').addEventListener('click', () => {
     // Очистить фильтр категории
     currentSelectedItemId = null;
     currentPath = null;
+    currentSortDirection = 'asc';
+    currentSortField = 'ComponentName';
     resetCategoryFilter();
 
     // Для очистки поля поиска таблицы "материалы"
@@ -121,21 +144,50 @@ document.getElementById('reset-select-btn').addEventListener('click', () => {
 
 });
 
+// Изменение иконок сортировки
+function updateSortIcons() {
+    const iconName = document.getElementById('iconName');
+    const iconQty = document.getElementById('iconQuantity');
+
+    iconName.classList.add('hidden');
+    iconQty.classList.add('hidden');
+
+    if (currentSortField === 'ComponentName') {
+        iconName.classList.remove('hidden');
+        iconName.src = iconName.dataset[currentSortDirection === 'asc' ? 'iconAsc' : 'iconDesc'];
+    } else if (currentSortField === 'TotalQuantity') {
+        iconQty.classList.remove('hidden');
+        iconQty.src = iconQty.dataset[currentSortDirection === 'asc' ? 'iconAsc' : 'iconDesc'];
+    }
+}
+
+// Изменение иконки фильтра по категории
+function updateFilterIcon() {
+    const filterIcon = document.getElementById('FilterIcon');
+    const defaultIcon = filterIcon.dataset.iconDefault;
+    const onIcon = filterIcon.dataset.iconOn;
+
+    if (activeSelectedCategory) {
+        filterIcon.src = onIcon;
+    } else {
+        filterIcon.src = defaultIcon;
+    }
+}
+
 // Функция сброса фильтра по категории
 function resetCategoryFilter() {
-    selectedCategory = '';
     activeSelectedCategory = '';
+    updateFilterIcon()
 
     document.getElementById('categoryDropdown')?.classList.add('hidden');
     document.getElementById('reset-filter-btn')?.classList.add('hidden');
     document.getElementById('selectedCategoryLabel').textContent = '';
 
 
-    loadMaterialsTable(currentOrderId, currentSelectedItemId, currentPath, selectedCategory).then(() => {
+    loadMaterialsTable(currentOrderId, currentSelectedItemId, currentPath, activeSelectedCategory).then(() => {
         filterMaterialsTable('searchInputMaterials', 'materials-table-body');
     });
 }
-
 
 // Функция для очистки выделения цветом
 function clearSelectionHighlight() {
@@ -146,7 +198,6 @@ function clearSelectionHighlight() {
 
     isItemSelected = false;
     updateResetSelectButtonVisibility(); // Обновляем видимость кнопки
-
 
 }
 
@@ -183,6 +234,8 @@ async function toggleOrderModal(row = null, orderData = null) {
 
     const orderId = row.dataset.id;
     currentOrderId = orderId;
+    currentSortDirection = 'asc';
+    currentSortField = 'ComponentName';
 
     modal.dataset.orderId = orderId; // Сохраняем ID заказа в модальном окне// document.getElementById('order-and-component-display').textContent = `#${orderId} / Компонент: -`;
 
@@ -563,19 +616,14 @@ async function loadMaterialsTable(orderId, itemId = null, path = '', selectedCat
 
         const response = await fetch(endpoint);
         const data = await response.json();
+        allMaterialData = data.items;
 
-        data.items.forEach(item => {
-            const row = document.createElement('tr');
-            row.className = 'text-sm border-b';
+        // Сортируем
+        const sortedItems = sortItems(data.items);
+        renderTable(sortedItems);
 
-            row.innerHTML = `
-                <td class="px-2 py-1">${item.ComponentName}</td>
-                <td class="px-2 py-1 text-center">${parseFloat(item.TotalQuantity).toLocaleString('ru-RU')}</td>
-                <td class="px-2 py-1 text-center">${item.basic_unit}</td>
-            `;
-
-            materialTableBody.appendChild(row);
-        });
+        // Обновляем иконки сортировки
+        updateSortIcons();
 
         // Получение и отрисовка уникальных категорий
         const categories = Array.isArray(data.categories) ? data.categories : [];
@@ -596,6 +644,7 @@ async function loadMaterialsTable(orderId, itemId = null, path = '', selectedCat
                 document.getElementById('reset-filter-btn').classList.remove('hidden');
 
                 activeSelectedCategory = selectedCategory;
+                updateFilterIcon();
 
                 // Отображаем выбранную категорию
                 const label = document.getElementById('selectedCategoryLabel');
@@ -647,6 +696,53 @@ document.getElementById('CategoryFilterMaterials').addEventListener('click', fun
     document.getElementById('categoryDropdown').classList.toggle('hidden');
 });
 
+// Слушатель кнопки сортировки поля "Наименование"
+document.getElementById('sortByName').addEventListener('click', () => {
+    if (currentSortField === 'ComponentName') {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortField = 'ComponentName';
+        currentSortDirection = 'asc';
+    }
 
+    const sorted = sortItems(allMaterialData);
+    renderTable(sorted);
+    updateSortIcons();
+    filterMaterialsTable('searchInputMaterials', 'materials-table-body');
 
+});
 
+// Слушатель кнопки сортировки поля "Кол-во"
+document.getElementById('sortByQuantity').addEventListener('click', () => {
+    if (currentSortField === 'TotalQuantity') {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortField = 'TotalQuantity';
+        currentSortDirection = 'asc';
+    }
+
+    const sorted = sortItems(allMaterialData);
+    renderTable(sorted);
+    updateSortIcons();
+    filterMaterialsTable('searchInputMaterials', 'materials-table-body');
+
+});
+
+// Функция отрисовки таблицы "Материалы" при сортировке
+function renderTable(items) {
+    const tbody = document.getElementById('materials-table-body');
+    tbody.innerHTML = '';
+
+    items.forEach(item => {
+        const row = document.createElement('tr');
+        row.className = 'text-sm border-b';
+
+        row.innerHTML = `
+            <td class="px-2 py-1">${item.ComponentName}</td>
+            <td class="px-2 py-1 text-center">${parseFloat(item.TotalQuantity).toLocaleString('ru-RU')}</td>
+            <td class="px-2 py-1 text-center">${item.basic_unit}</td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
