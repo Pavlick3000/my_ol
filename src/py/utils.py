@@ -72,17 +72,23 @@ def group_children(items):
         'OrderItemID': None,
         'ParentID': None,
         'Path': None,
+        'QuantityPerUnit': None, # нов0508
     })
 
     for item in items:
         key = (item['ComponentID'], item['ParentID'], item['Path'])
-
         grouped_item = grouped[key]
 
         # Обновляем поля (сохраняем первый попавшийся ненулевой вариант)
         for field in ['ComponentName', 'basic_unit', 'Level', 'CategoryName', 'CategoryParentName', 'CategoryGrandParentName']:
             if grouped_item[field] is None:
                 grouped_item[field] = item.get(field)
+
+        if grouped_item['QuantityPerUnit'] is None:
+            qpu = item.get('QuantityPerUnit')
+            # механика: считать None/0 как отсутствующее значение; поменяйте условие при необходимости
+            if qpu is not None:
+                grouped_item['QuantityPerUnit'] = qpu
 
         grouped_item['TotalQuantity'] += item.get('TotalQuantity', 0)
 

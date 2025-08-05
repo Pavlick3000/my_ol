@@ -43,13 +43,18 @@ async function fetchOrderDetails(orderId, refresh = false) {
 // Сортировка по выбранному полю и направлению
 function sortItems(items) {
     return items.sort((a, b) => {
-        const valA = currentSortField === 'TotalQuantity'
-            ? parseFloat(a.TotalQuantity)
-            : a.ComponentName.toLowerCase();
+        let valA, valB;
 
-        const valB = currentSortField === 'TotalQuantity'
-            ? parseFloat(b.TotalQuantity)
-            : b.ComponentName.toLowerCase();
+        if (currentSortField === 'TotalQuantity') {
+            valA = parseFloat(a.TotalQuantity);
+            valB = parseFloat(b.TotalQuantity);
+        } else if (currentSortField === 'Qnt') {
+            valA = parseFloat(a.Qnt);
+            valB = parseFloat(b.Qnt);
+        } else {
+            valA = a.ComponentName.toLowerCase();
+            valB = b.ComponentName.toLowerCase();
+        }
 
         if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
         if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
@@ -148,9 +153,11 @@ document.getElementById('reset-select-btn').addEventListener('click', () => {
 function updateSortIcons() {
     const iconName = document.getElementById('iconName');
     const iconQty = document.getElementById('iconQuantity');
+    const iconInStock = document.getElementById('iconInStock');
 
-    iconName.classList.add('hidden');
-    iconQty.classList.add('hidden');
+    iconName?.classList.add('hidden');
+    iconQty?.classList.add('hidden');
+    iconInStock?.classList.add('hidden');
 
     if (currentSortField === 'ComponentName') {
         iconName.classList.remove('hidden');
@@ -158,6 +165,9 @@ function updateSortIcons() {
     } else if (currentSortField === 'TotalQuantity') {
         iconQty.classList.remove('hidden');
         iconQty.src = iconQty.dataset[currentSortDirection === 'asc' ? 'iconAsc' : 'iconDesc'];
+    } else if (currentSortField === 'Qnt') {
+        iconInStock?.classList.remove('hidden');
+        iconInStock.src = iconInStock.dataset[currentSortDirection === 'asc' ? 'iconAsc' : 'iconDesc'];
     }
 }
 
@@ -568,7 +578,43 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
 
         const spanRight = document.createElement('span');
         spanRight.className = 'text-right text-xs';
-        spanRight.textContent = `${parseFloat(item.TotalQuantity)} ${item.basic_unit || ''}`;
+
+        // Создаем отдельный элемент для TotalQuantity с relative для позиционирования тултипа
+        const totalQuantitySpan = document.createElement('span');
+        totalQuantitySpan.className = 'relative inline-flex items-center';
+        totalQuantitySpan.textContent = `${parseFloat(item.TotalQuantity)} ${item.basic_unit || ''}`;
+
+        let tooltipTimeout;
+        let tooltipElement;
+
+        totalQuantitySpan.addEventListener('mouseenter', (e) => {
+            tooltipTimeout = setTimeout(() => {
+                tooltipElement = document.createElement('div');
+                tooltipElement.className =
+                    'absolute bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg z-[9999] whitespace-nowrap';
+                tooltipElement.textContent = `На одно изделие: ${parseFloat(item.QuantityPerUnit)} ${item.basic_unit || ''}`;
+
+                document.body.appendChild(tooltipElement);
+
+                const rect = totalQuantitySpan.getBoundingClientRect();
+                // Позиционируем тултип справа от элемента, по вертикали по центру
+                tooltipElement.style.left = `${rect.right + 8 + window.scrollX}px`;
+                tooltipElement.style.top = `${rect.top + window.scrollY + rect.height / 2}px`;
+                tooltipElement.style.transform = 'translateY(-50%)';
+            }, 600);
+        });
+
+        totalQuantitySpan.addEventListener('mouseleave', () => {
+            clearTimeout(tooltipTimeout);
+            if (tooltipElement) {
+                tooltipElement.remove();
+                tooltipElement = null;
+            }
+        });
+
+        spanRight.appendChild(totalQuantitySpan);
+        // _____
+
 
         node.appendChild(spanLeft);
         node.appendChild(spanRight);
@@ -636,7 +682,7 @@ async function loadMaterialsTable(orderId, itemId = null, path = '', selectedCat
             categoryDropdown.appendChild(option);
         });
 
-        // Навешиваем клики
+        // Навешиваем клики внутри выпадающего списка с категориями
         categoryDropdown.querySelectorAll('div[data-category]').forEach(item => {
             item.addEventListener('click', function () {
                 selectedCategory = this.dataset.category;
@@ -728,6 +774,21 @@ document.getElementById('sortByQuantity').addEventListener('click', () => {
 
 });
 
+// Слушатель кнопки сортировки поля "На складе"
+document.getElementById('sortByInStock').addEventListener('click', () => {
+    if (currentSortField === 'Qnt') {
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSortField = 'Qnt';
+        currentSortDirection = 'asc';
+    }
+
+    const sorted = sortItems(allMaterialData);
+    renderTable(sorted);
+    updateSortIcons();
+    filterMaterialsTable('searchInputMaterials', 'materials-table-body');
+});
+
 // Функция отрисовки таблицы "Материалы" при сортировке
 function renderTable(items) {
     const tbody = document.getElementById('materials-table-body');
@@ -735,13 +796,14 @@ function renderTable(items) {
 
     items.forEach(item => {
         const row = document.createElement('tr');
-        row.className = 'text-sm border-b';
+        row.className = 'text-sm border-b hover:text-emerald-500';
 
         row.innerHTML = `
             <td class="px-2 py-1">${item.ComponentName}</td>
             <td class="px-2 py-1 text-center">${parseFloat(item.TotalQuantity).toLocaleString('ru-RU')}</td>
             <td class="px-2 py-1 text-center">${item.basic_unit}</td>
-            <td class="px-2 py-1 text-center text-gray-400">${parseFloat(item.Qnt).toLocaleString('ru-RU')}</td>
+            <td class="px-2 py-1 text-center ${parseFloat(item.Qnt) <= 0 ? 'font-semibold text-red-300' : 'text-gray-400'}">${parseFloat(item.Qnt).toLocaleString('ru-RU')}
+    </td>
         `;
 
         tbody.appendChild(row);
