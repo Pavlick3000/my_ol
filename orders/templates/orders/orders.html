@@ -12,7 +12,7 @@
     
         <!-- Модальное окно "Детали заказа покупателя" -->
         <div id="ordermodal" class="fixed inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center hidden z-40 overflow-y-auto">
-            <div class="bg-white p-6 rounded-lg max-w-[1680px] w-full max-h-[850px] shadow-lg shadow-gray-700 relative">
+            <div class="bg-white p-6 border border-gray-200 rounded-lg max-w-[1680px] w-full max-h-[850px] shadow-lg shadow-gray-700 relative">
 
                 <!-- Кнопка закрытия -->
                 <div class="absolute top-2 right-2 group inline-flex items-center">
@@ -60,7 +60,7 @@
                             </div>
 
                             <!-- Кнопка сброса выделения строки -->
-                            <button type="button" class="group hidden bg-gray-100 font-semibold text-emerald-600 hover:bg-gray-200 px-3 py-1 rounded-md text-xs transition-colors duration-200" id="reset-select-btn">
+                            <button type="button" id="reset-select-btn" class="group hidden bg-gray-100 font-semibold text-emerald-600 hover:bg-gray-200 px-3 py-1 rounded-md text-xs transition-colors duration-200">
                                 Сбросить выделение
                             </button>
 
@@ -71,7 +71,7 @@
                             <!-- Таблица с деревом -->
                             <div class="overflow-y-auto pr-2 scrollbar-custom max-h-[67vh] mt-1">
                                 <table class="w-full">
-                                    <thead class="sticky top-0 bg-white">
+                                    <thead class="sticky top-0 bg-white z-10">
                                     <tr class="border-b border-gray-300">
                                         <th class="w-2 px-2 py-1"></th>
                                         <th class="w-24 px-2 py-1 font-medium">Наименование</th>
@@ -137,8 +137,8 @@
                                     <input
                                             id="searchInputMaterials"
                                             type="text"
-                                            placeholder="Поиск"
-                                            class="bg-transparent w-[500px] focus:outline-none text-sm placeholder-gray-400 cursor-text">
+                                            placeholder=""
+                                            class="bg-transparent w-[500px] focus:outline-none text-sm placeholder-gray-400 cursor-text overflow-hidden text-ellipsis">
                                 </div>
 
                                 <!-- Сортировка и фильтр -->
@@ -154,24 +154,29 @@
                                     
                                     <!-- Фильтр -->
                                     <div class="relative">
-                                        <button id="CategoryFilterMaterials" class="flex items-center space-x-1 hover:text-gray-700">
+{#                                        <button id="CategoryFilterMaterials" class="flex items-center space-x-1 hover:text-gray-700">#}
+                                        <button id="CategoryFilterMaterials" class="flex items-start hover:text-gray-700">
                                             <img id="FilterIcon"
                                                  data-icon-default="{% static 'icons/filter.ico' %}"
                                                  data-icon-on="{% static 'icons/filterON.ico' %}"
                                                  src="{% static 'icons/filter.ico' %}"
                                                  alt="Filter"
                                                  class="w-4 h-4">
+                                            
+                                            <span class="ml-2 text-xs text-emerald-600 font-semibold text-right whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]" id="selectedCategoryLabel"></span>
                                         </button>
+                                        <!-- Лейбл с выбранной категорией -->
+                                        
 
                                         <div id="categoryDropdown"
-                                            class="absolute hidden left-1/2 transform -translate-x-1/2 mt-4 bg-white shadow-md border rounded z-10 text-sm
+                                            class="absolute hidden left-1/2 transform -translate-x-1/2 mt-4 bg-white shadow-md border border-gray-200 rounded z-10 text-sm
                                                     scrollbar-custom max-h-[62vh] overflow-y-auto w-48">
                                             <!-- Остальные категории будут добавлены через JS -->
                                         </div>
                                     </div>
 
                                     <!-- Лейбл с выбранной категорией -->
-                                    <div class="text-xs text-emerald-600 font-semibold" id="selectedCategoryLabel"></div>
+{#                                    <div class="text-xs text-emerald-600 font-semibold text-right" id="selectedCategoryLabel"></div>#}
 
                                 </div>
 

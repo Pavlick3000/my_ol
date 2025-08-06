@@ -4,6 +4,7 @@ let activeTabRightId = null;
 let isItemSelected = false;
 let currentOrderData = null;
 let currentSelectedItemId = null;
+let currentSelectedItemName = null;
 let activeSelectedCategory = ''; // сохраняем выбранную категорию
 let currentOrderId = null;
 let currentPath = null;
@@ -136,6 +137,9 @@ document.getElementById('reset-select-btn').addEventListener('click', () => {
     currentSortField = 'ComponentName';
     resetCategoryFilter();
 
+    currentSelectedItemName = null;
+    setSearchPlaceholder(currentSelectedItemName);
+
     // Для очистки поля поиска таблицы "материалы"
     clearInputMaterials('searchInputMaterials');
 
@@ -202,7 +206,8 @@ function resetCategoryFilter() {
 // Функция для очистки выделения цветом
 function clearSelectionHighlight() {
     document.querySelectorAll('[data-selected="true"]').forEach(el => {
-        el.classList.remove('!bg-emerald-100');
+        // el.classList.remove('!bg-emerald-100');
+        el.classList.remove('my-select-style');
         delete el.dataset.selected;
     });
 
@@ -233,6 +238,18 @@ function updateResetFilterButtonVisibility() {
 
 }
 
+// Функция для Placeholder поиска по "Материалам"
+function setSearchPlaceholder(name) {
+    const searchInput = document.getElementById('searchInputMaterials');
+    if (!searchInput) return; // защита, если элемента нет
+
+    if (name) {
+        searchInput.placeholder = `Поиск по "${name}"`;
+    } else {
+        searchInput.placeholder = 'Поиск по заказу'; // fallback
+    }
+}
+
 // Открытие модального окна с составом "Заказа покупателя"
 async function toggleOrderModal(row = null, orderData = null) {
 
@@ -246,6 +263,9 @@ async function toggleOrderModal(row = null, orderData = null) {
     currentOrderId = orderId;
     currentSortDirection = 'asc';
     currentSortField = 'ComponentName';
+
+    currentSelectedItemName = null;
+    setSearchPlaceholder(currentSelectedItemName);
 
     modal.dataset.orderId = orderId; // Сохраняем ID заказа в модальном окне// document.getElementById('order-and-component-display').textContent = `#${orderId} / Компонент: -`;
 
@@ -372,10 +392,11 @@ async function loadProductTab(orderId, loaderOpen, data) {
 
             // Добавляем обработчик клика на строку
             itemRow.addEventListener('click', () => {
-
+                console.log('Мы кликнули')
                 // Подсветка
                 clearSelectionHighlight();
-                itemRow.classList.add('!bg-emerald-100');
+                // itemRow.classList.add('!bg-emerald-100');
+                itemRow.classList.add('my-select-style');
                 itemRow.dataset.selected = 'true';
 
                 // Указываем в переменной факт клика и запускаем проверку для видимости кнопки "сбросить выделения"
@@ -383,6 +404,10 @@ async function loadProductTab(orderId, loaderOpen, data) {
                 updateResetSelectButtonVisibility();
 
                 currentSelectedItemId = item.id;
+
+                currentSelectedItemName = item.name;
+                setSearchPlaceholder(currentSelectedItemName);
+
                 currentPath = null;
                 resetCategoryFilter(); // от сюда мы потом грузим саму таблицу
 
@@ -394,7 +419,8 @@ async function loadProductTab(orderId, loaderOpen, data) {
             specToggleBtn.textContent = '▸';
             specToggleBtn.className = 'ml-2 text-emerald-600 hover:text-emerald-800';
             specToggleBtn.addEventListener('click', async (e) => {
-                // e.stopPropagation();
+                e.stopPropagation(); // это чтобы не было повторной загрузки таблицы "Материалы"
+
                 const specRow = document.getElementById(`spec-for-${item.id}`);
                 const isHidden = specRow.classList.contains('hidden');
 
@@ -524,12 +550,13 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
             node.addEventListener('click', (e) => {
                 if (e.target.classList.contains('toggle-node')) return;
 
-                // Удаляем подсветку со всех ранее выбранных
-                document.querySelectorAll('.bg-emerald-100').forEach(el => el.classList.remove('bg-emerald-100'));
+                // Подставляем значение наименования в Placeholder
+                currentSelectedItemName = item.ComponentName;
+                setSearchPlaceholder(currentSelectedItemName);
 
                 // Подсветка
                 clearSelectionHighlight();
-                node.classList.add('!bg-emerald-100');
+                node.classList.add('my-select-style');
                 node.dataset.selected = 'true';
 
                 // Указываем в переменной факт клика по дереву и запускаем проверку для видимости кнопки "сбросить выделения"
@@ -584,6 +611,8 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
         totalQuantitySpan.className = 'relative inline-flex items-center';
         totalQuantitySpan.textContent = `${parseFloat(item.TotalQuantity)} ${item.basic_unit || ''}`;
 
+
+
         let tooltipTimeout;
         let tooltipElement;
 
@@ -593,6 +622,8 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
                 tooltipElement.className =
                     'absolute bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg z-[9999] whitespace-nowrap';
                 tooltipElement.textContent = `На одно изделие: ${parseFloat(item.QuantityPerUnit)} ${item.basic_unit || ''}`;
+
+
 
                 document.body.appendChild(tooltipElement);
 
