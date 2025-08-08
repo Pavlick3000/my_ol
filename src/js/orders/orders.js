@@ -135,7 +135,7 @@ document.getElementById('reset-select-btn').addEventListener('click', () => {
     currentPath = null;
     currentSortDirection = 'asc';
     currentSortField = 'ComponentName';
-    resetCategoryFilter();
+    resetCategoryFilter(false);
 
     currentSelectedItemName = null;
     setSearchPlaceholder(currentSelectedItemName);
@@ -189,14 +189,16 @@ function updateFilterIcon() {
 }
 
 // Функция сброса фильтра по категории
-function resetCategoryFilter() {
-    activeSelectedCategory = '';
-    updateFilterIcon()
+function resetCategoryFilter(resetCategory = true) {
+    // Если кликнули именно на кнопку сбросить фильтр по категории, то фильтр сбрасывается, иначе отрисовываем материалы по выбранному фильтру
+    if (resetCategory) {
+        activeSelectedCategory = '';
+        document.getElementById('reset-filter-btn')?.classList.add('hidden');
+        document.getElementById('selectedCategoryLabel').textContent = '';
+    }
 
+    updateFilterIcon();
     document.getElementById('categoryDropdown')?.classList.add('hidden');
-    document.getElementById('reset-filter-btn')?.classList.add('hidden');
-    document.getElementById('selectedCategoryLabel').textContent = '';
-
 
     loadMaterialsTable(currentOrderId, currentSelectedItemId, currentPath, activeSelectedCategory).then(() => {
         filterMaterialsTable('searchInputMaterials', 'materials-table-body');
@@ -264,8 +266,13 @@ async function toggleOrderModal(row = null, orderData = null) {
     currentSortDirection = 'asc';
     currentSortField = 'ComponentName';
 
+    // Для сброса Placeholder поля поиск таблицы "Материалы"
     currentSelectedItemName = null;
     setSearchPlaceholder(currentSelectedItemName);
+
+    // Для сброса иконки фильтра по категории
+    activeSelectedCategory = '';
+    updateFilterIcon();
 
     modal.dataset.orderId = orderId; // Сохраняем ID заказа в модальном окне// document.getElementById('order-and-component-display').textContent = `#${orderId} / Компонент: -`;
 
@@ -392,10 +399,9 @@ async function loadProductTab(orderId, loaderOpen, data) {
 
             // Добавляем обработчик клика на строку
             itemRow.addEventListener('click', () => {
-                console.log('Мы кликнули')
+
                 // Подсветка
                 clearSelectionHighlight();
-                // itemRow.classList.add('!bg-emerald-100');
                 itemRow.classList.add('my-select-style');
                 itemRow.dataset.selected = 'true';
 
@@ -405,11 +411,12 @@ async function loadProductTab(orderId, loaderOpen, data) {
 
                 currentSelectedItemId = item.id;
 
+                // Для Placeholder поля поиск таблицы "Материалы"
                 currentSelectedItemName = item.name;
                 setSearchPlaceholder(currentSelectedItemName);
 
                 currentPath = null;
-                resetCategoryFilter(); // от сюда мы потом грузим саму таблицу
+                resetCategoryFilter(false); // от сюда мы потом грузим саму таблицу
 
                 loaderMaterial.classList.remove('hidden');
 
@@ -567,7 +574,7 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
 
                 currentPath = path;
                 currentSelectedItemId = null;
-                resetCategoryFilter(); // от сюда мы потом грузим саму таблицу
+                resetCategoryFilter(false); // от сюда мы потом грузим саму таблицу
 
             });
         } else {
@@ -723,6 +730,10 @@ async function loadMaterialsTable(orderId, itemId = null, path = '', selectedCat
                 activeSelectedCategory = selectedCategory;
                 updateFilterIcon();
 
+                // Показываем тултип при следующем наведении
+                const tooltip = document.getElementById('filterTooltip');
+                tooltip.classList.add('group-hover:opacity-100');
+
                 // Отображаем выбранную категорию
                 const label = document.getElementById('selectedCategoryLabel');
                 label.textContent = selectedCategory || '';
@@ -741,7 +752,7 @@ async function loadMaterialsTable(orderId, itemId = null, path = '', selectedCat
         const resetBtn = document.getElementById('reset-filter-btn');
 
         if (resetBtn) {
-            resetBtn.addEventListener('click', resetCategoryFilter);
+            resetBtn.addEventListener('click', () => resetCategoryFilter(true));
         }
 
     } catch (error) {
@@ -770,7 +781,20 @@ document.getElementById('searchInputMaterials').addEventListener('input', functi
 
 // Слушатель кнопки "фильтр"
 document.getElementById('CategoryFilterMaterials').addEventListener('click', function () {
-    document.getElementById('categoryDropdown').classList.toggle('hidden');
+    const dropdown = document.getElementById('categoryDropdown');
+    const tooltip = document.getElementById('filterTooltip');
+
+    const isHidden = dropdown.classList.toggle('hidden');
+
+    if (isHidden) {
+        // Показать тултип при скрытом списке
+        tooltip.classList.add('group-hover:opacity-100');
+        tooltip.classList.remove('opacity-0');
+    } else {
+        // Скрыть тултип при открытом списке
+        tooltip.classList.remove('group-hover:opacity-100');
+        tooltip.classList.add('opacity-0');
+    }
 });
 
 // Слушатель кнопки сортировки поля "Наименование"

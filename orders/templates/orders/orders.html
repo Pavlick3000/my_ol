@@ -115,7 +115,7 @@
                             </div>
 
                             <!-- Кнопка сброса фильтра -->
-                            <button type="button" class="group hidden bg-gray-100 font-semibold text-emerald-600 hover:bg-gray-200 px-3 py-1 rounded-md text-xs transition-colors duration-200" id="reset-filter-btn">
+                            <button type="button" id="reset-filter-btn" class="group hidden bg-gray-100 font-semibold text-emerald-600 hover:bg-gray-200 px-3 py-1 rounded-md text-xs transition-colors duration-200">
                                 Сбросить фильтр
                             </button>
 
@@ -123,7 +123,7 @@
 
                         <!-- Контент вкладок -->
                         <div class="second-tab-content hidden" id="dashboard-tab">
-                            <p class="text-sm text-gray-500">Здесь будет красивый дашборд...</p>
+                            <p class="text-sm text-gray-500">Здесь будет очень красивый дашборд...</p>
                         </div>
 
                         <div class="second-tab-content hidden" id="material-tab">
@@ -141,43 +141,57 @@
                                             class="bg-transparent w-[500px] focus:outline-none text-sm placeholder-gray-400 cursor-text overflow-hidden text-ellipsis">
                                 </div>
 
-                                <!-- Сортировка и фильтр -->
+                                <!-- Очистка поиска и фильтр -->
                                 <div class="flex items-center space-x-4 text-gray-500 text-sm">
-                                    <button class="flex items-center space-x-1 hover:text-gray-700"
-                                        type="button"
-                                        onclick="clearInputMaterials('searchInputMaterials')">
-                                        <img src="{% static 'icons/close2.ico' %}" alt="Sort" class="w-4 h-4">
-                                    </button>
-
+                                    
+                                    <!-- Крестик поиска -->
+                                    <div class="relative group inline-flex items-center">
+                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 px-2 py-1 rounded-lg text-sm text-white bg-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 whitespace-nowrap">
+                                            Очистить поиск
+                                        </div>
+                                        <button class="flex items-center space-x-1 hover:text-gray-700"
+                                                type="button"
+                                                onclick="clearInputMaterials('searchInputMaterials')">
+                                            <img src="{% static 'icons/close2.ico' %}" alt="Очистить" class="w-4 h-4">
+                                        </button>
+                                    </div>
+                                    
                                     <!-- Вертикальная черта -->
                                     <div class="h-4 border-l border-gray-300"></div>
                                     
                                     <!-- Фильтр -->
-                                    <div class="relative">
-{#                                        <button id="CategoryFilterMaterials" class="flex items-center space-x-1 hover:text-gray-700">#}
-                                        <button id="CategoryFilterMaterials" class="flex items-start hover:text-gray-700">
-                                            <img id="FilterIcon"
-                                                 data-icon-default="{% static 'icons/filter.ico' %}"
-                                                 data-icon-on="{% static 'icons/filterON.ico' %}"
-                                                 src="{% static 'icons/filter.ico' %}"
-                                                 alt="Filter"
-                                                 class="w-4 h-4">
-                                            
-                                            <span class="ml-2 text-xs text-emerald-600 font-semibold text-right whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]" id="selectedCategoryLabel"></span>
-                                        </button>
-                                        <!-- Лейбл с выбранной категорией -->
-                                        
+                                    <div class="inline-flex items-center space-x-2 text-gray-500 text-sm">
 
-                                        <div id="categoryDropdown"
-                                            class="absolute hidden left-1/2 transform -translate-x-1/2 mt-4 bg-white shadow-md border border-gray-200 rounded z-10 text-sm
-                                                    scrollbar-custom max-h-[62vh] overflow-y-auto w-48">
-                                            <!-- Остальные категории будут добавлены через JS -->
+                                        <!-- Обёртка иконки фильтра с тултипом и выпадающим списком -->
+                                        <div class="relative inline-block group">
+                                            <!-- Тултип -->
+                                            <div id="filterTooltip"
+                                                 class="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 px-2 py-1 rounded-lg text-sm text-white bg-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 whitespace-nowrap">
+                                                Фильтр по категории
+                                            </div>
+
+                                            <!-- Кнопка с иконкой -->
+                                            <button id="CategoryFilterMaterials" class="flex items-center hover:text-gray-700">
+                                                <img id="FilterIcon"
+                                                     data-icon-default="{% static 'icons/filter.ico' %}"
+                                                     data-icon-on="{% static 'icons/filterON.ico' %}"
+                                                     src="{% static 'icons/filter.ico' %}"
+                                                     alt="Filter"
+                                                     class="w-4 h-4">
+                                            </button>
+
+                                            <!-- Выпадающий список ПОД иконкой -->
+                                            <div id="categoryDropdown"
+                                                 class="absolute left-1/2 -translate-x-1/2 mt-4 bg-white shadow-md border border-gray-200 rounded z-10 text-sm scrollbar-custom max-h-[62vh] overflow-y-auto w-48 hidden">
+                                                <!-- Остальные категории будут добавлены через JS -->
+                                            </div>
                                         </div>
+                                        <!-- Лейбл выбранной категории -->
+                                        <span class="ml-1 text-xs text-emerald-600 font-semibold text-right whitespace-nowrap overflow-hidden text-ellipsis max-w-[130px]"
+                                              id="selectedCategoryLabel"></span>
+                                        
                                     </div>
-
-                                    <!-- Лейбл с выбранной категорией -->
-{#                                    <div class="text-xs text-emerald-600 font-semibold text-right" id="selectedCategoryLabel"></div>#}
-
+                                    
                                 </div>
 
                             </div>
