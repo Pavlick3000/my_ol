@@ -59,6 +59,8 @@ def get_specs_tree(orderId, itemId=None):
 def group_children(items):
     grouped = defaultdict(lambda: {
         'TotalQuantity': 0,
+        'Qnt': None,
+        'Requirement': None,
         'children': [],
         'items': [],
         'ComponentName': None,
@@ -91,6 +93,15 @@ def group_children(items):
                 grouped_item['QuantityPerUnit'] = qpu
 
         grouped_item['TotalQuantity'] += item.get('TotalQuantity', 0)
+        # grouped_item['Qnt'] += item.get('Qnt', 0)
+
+        # Берём Qnt, если ещё не было
+        if grouped_item['Qnt'] is None:
+            grouped_item['Qnt'] = item.get('Qnt')
+
+            # Берём Qnt, если ещё не было
+            if grouped_item['Requirement'] is None:
+                grouped_item['Requirement'] = item.get('Requirement')
 
         for field in ['ComponentID', 'ComponentDbId', 'OrderItemID', 'ParentID', 'Path']:
             if grouped_item[field] is None:
@@ -130,6 +141,7 @@ def group_flat_materials(rows, columns):
     grouped = defaultdict(lambda: {
         'TotalQuantity': Decimal(0),
         'Qnt': None,
+        'Requirement': None,
         'CategoryName': None,
         'ComponentName': None,
         'basic_unit': None
@@ -158,13 +170,17 @@ def group_flat_materials(rows, columns):
         if group['Qnt'] is None and row_dict.get('Qnt') is not None:
             group['Qnt'] = row_dict.get('Qnt')
 
+        if group['Requirement'] is None and row_dict.get('Requirement') is not None:
+            group['Requirement'] = row_dict.get('Requirement')
+
     return [
         {
             'ComponentName': k[0],
             'basic_unit': k[1],
             'TotalQuantity': float(v['TotalQuantity']),
             'CategoryName': v['CategoryName'],
-            'Qnt': v['Qnt']
+            'Qnt': v['Qnt'],
+            'Requirement': v['Requirement']
         }
         for k, v in grouped.items()
     ]

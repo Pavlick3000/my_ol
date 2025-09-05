@@ -548,6 +548,15 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
         node.dataset.componentId = item.ComponentDbId;
         node.dataset.path = item.Path || '';
 
+
+        const totalQuantity = parseFloat(item.TotalQuantity);
+        const qnt = parseFloat(item.Qnt);
+
+
+        if (!isNaN(totalQuantity) && !isNaN(qnt) && totalQuantity > qnt) {
+            node.classList.add('text-red-500');
+        }
+
         // Добавляем cursor-pointer только если есть дети
         const hasChildren = item.children && item.children.length > 0;
         if (hasChildren) {
@@ -619,7 +628,6 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
         totalQuantitySpan.textContent = `${parseFloat(item.TotalQuantity)} ${item.basic_unit || ''}`;
 
 
-
         let tooltipTimeout;
         let tooltipElement;
 
@@ -629,8 +637,6 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
                 tooltipElement.className =
                     'absolute bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg z-[9999] whitespace-nowrap';
                 tooltipElement.textContent = `На одно изделие: ${parseFloat(item.QuantityPerUnit)} ${item.basic_unit || ''}`;
-
-
 
                 document.body.appendChild(tooltipElement);
 
@@ -651,8 +657,6 @@ async function renderSpecTree(items, parentElement, level = 0, options = {}) {
         });
 
         spanRight.appendChild(totalQuantitySpan);
-        // _____
-
 
         node.appendChild(spanLeft);
         node.appendChild(spanRight);
@@ -845,22 +849,132 @@ document.getElementById('sortByInStock').addEventListener('click', () => {
 });
 
 // Функция отрисовки таблицы "Материалы" при сортировке
+// function renderTable(items) {
+//     const tbody = document.getElementById('materials-table-body');
+//     tbody.innerHTML = '';
+//
+//     items.forEach(item => {
+//         const row = document.createElement('tr');
+//         // row.className = 'text-sm border-b hover:text-emerald-500';
+//         row.className = 'text-sm border-b hover:text-emerald-500 relative group';
+//
+//         // Добавляем класс к строке если условие выполняется
+//         if (parseFloat(item.Qnt) < parseFloat(item.Requirement)) {
+//             row.classList.add('text-red-300');
+//         }
+//
+//         // Затем добавляем содержимое
+//         row.innerHTML = `
+//             <td class="px-2 py-1 text-xs">${item.ComponentName}</td>
+//             <td class="px-2 py-1 text-center">${parseFloat(item.TotalQuantity).toLocaleString('ru-RU')}</td>
+//             <td class="px-2 py-1 text-center">${item.basic_unit}</td>
+// <!--            // <td class="px-2 py-1 text-center ${parseFloat(item.Qnt) <= 0 ? 'font-semibold text-red-300' : 'text-gray-400'}">${parseFloat(item.Qnt).toLocaleString('ru-RU')}-->
+// <!--            // <td class="px-2 py-1 text-center">${parseFloat(item.Requirement).toLocaleString('ru-RU')}</td>-->
+//
+//             <!-- тултипы -->
+//             <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 px-2 py-1 rounded-md bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition">
+//                 На складе: ${parseFloat(item.Qnt).toLocaleString('ru-RU')}
+//             </div>
+//
+//             <!-- тултип снизу -->
+//             <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 rounded-md bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition">
+//                 Потребность по всем заказам: ${parseFloat(item.Requirement).toLocaleString('ru-RU')}
+//             </div>
+//
+//         `;
+//
+//         tbody.appendChild(row);
+//     });
+// }
+
 function renderTable(items) {
     const tbody = document.getElementById('materials-table-body');
     tbody.innerHTML = '';
 
+    // глобальные тултипы (одни на всю таблицу)
+    let tooltipTop = document.getElementById('tooltip-top');
+    let tooltipBottom = document.getElementById('tooltip-bottom');
+
+    if (!tooltipTop) {
+        tooltipTop = document.createElement('div');
+        tooltipTop.id = 'tooltip-top';
+        tooltipTop.className =
+            'fixed px-2 py-1 rounded-md bg-gray-800 text-white text-xs ' +
+            'opacity-0 translate-y-1 transition duration-300 ease-out pointer-events-none z-[9999]';
+        document.body.appendChild(tooltipTop);
+    }
+    if (!tooltipBottom) {
+        tooltipBottom = document.createElement('div');
+        tooltipBottom.id = 'tooltip-bottom';
+        tooltipBottom.className =
+            'fixed px-2 py-1 rounded-md bg-gray-800 text-white text-xs ' +
+            'opacity-0 -translate-y-1 transition duration-300 ease-out pointer-events-none z-[9999]';
+        document.body.appendChild(tooltipBottom);
+    }
+
     items.forEach(item => {
         const row = document.createElement('tr');
-        row.className = 'text-sm border-b hover:text-emerald-500';
+        row.className = 'text-sm border-b hover:text-emerald-500 cursor-pointer';
+
+        if (parseFloat(item.Qnt) < parseFloat(item.Requirement)) {
+            row.classList.add('text-red-300');
+        }
 
         row.innerHTML = `
-            <td class="px-2 py-1">${item.ComponentName}</td>
-            <td class="px-2 py-1 text-center">${parseFloat(item.TotalQuantity).toLocaleString('ru-RU')}</td>
+            <td class="px-2 py-1 text-xs">${item.ComponentName}</td>
+            <td class="px-2 py-1 text-center total-quantity">${parseFloat(item.TotalQuantity).toLocaleString('ru-RU')}</td>
             <td class="px-2 py-1 text-center">${item.basic_unit}</td>
-            <td class="px-2 py-1 text-center ${parseFloat(item.Qnt) <= 0 ? 'font-semibold text-red-300' : 'text-gray-400'}">${parseFloat(item.Qnt).toLocaleString('ru-RU')}
-    </td>
         `;
+
+        const qtyCell = row.querySelector('.total-quantity');
+        let showTimer;
+
+        qtyCell.addEventListener('mouseenter', () => {
+            showTimer = setTimeout(() => {
+                const rect = qtyCell.getBoundingClientRect();
+
+                // Сначала устанавливаем текст тултипов
+                tooltipBottom.textContent = `Потребность по всем заказам: ${parseFloat(item.Requirement).toLocaleString('ru-RU')}`;
+                tooltipTop.textContent = `На складе: ${parseFloat(item.Qnt).toLocaleString('ru-RU')}`;
+
+                // Принудительно обновляем отображение, чтобы получить актуальные размеры
+                tooltipTop.style.display = 'block';
+                tooltipBottom.style.display = 'block';
+
+                // Теперь получаем актуальные размеры тултипов
+                const tooltipTopWidth = tooltipTop.offsetWidth;
+                const tooltipBottomWidth = tooltipBottom.offsetWidth;
+
+                // Центрируем тултипы относительно ячейки
+                const cellCenterX = rect.left + rect.width / 2;
+
+                tooltipTop.style.left = (cellCenterX - tooltipTopWidth / 2) + 'px';
+                tooltipTop.style.top = (rect.top - tooltipTop.offsetHeight - 4 + window.scrollY) + 'px';
+
+                tooltipBottom.style.left = (cellCenterX - tooltipBottomWidth / 2) + 'px';
+                tooltipBottom.style.top = (rect.bottom + 4 + window.scrollY) + 'px';
+
+                tooltipTop.classList.remove('opacity-0', 'translate-y-1');
+                tooltipBottom.classList.remove('opacity-0', '-translate-y-1');
+            }, 500);
+        });
+
+        qtyCell.addEventListener('mouseleave', () => {
+            clearTimeout(showTimer);
+            tooltipTop.classList.add('opacity-0', 'translate-y-1');
+            tooltipBottom.classList.add('opacity-0', '-translate-y-1');
+
+            // Скрываем тултипы после анимации
+            setTimeout(() => {
+                tooltipTop.style.display = 'none';
+                tooltipBottom.style.display = 'none';
+            }, 300);
+        });
 
         tbody.appendChild(row);
     });
 }
+
+
+
+
