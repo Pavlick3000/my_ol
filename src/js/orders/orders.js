@@ -8,6 +8,7 @@ let currentSelectedItemName = null;
 let activeSelectedCategory = ''; // сохраняем выбранную категорию
 let currentOrderId = null;
 let currentPath = null;
+let deficitFilterOn = false; // состояние чекбокса с дефицитом
 
 // Переменные для сортировки таблицы "Материалы"
 let currentSortField = 'ComponentName';
@@ -273,6 +274,13 @@ async function toggleOrderModal(row = null, orderData = null) {
     // Для сброса иконки фильтра по категории
     activeSelectedCategory = '';
     updateFilterIcon();
+
+    // Для сброса галочки фильтра по дефициту
+    deficitFilterOn = false;
+    const deficitIcon = document.getElementById("DeficitFilterIcon");
+    if (deficitIcon) {
+        deficitIcon.src = deficitIcon.dataset.iconDefault;
+    }
 
     modal.dataset.orderId = orderId; // Сохраняем ID заказа в модальном окне// document.getElementById('order-and-component-display').textContent = `#${orderId} / Компонент: -`;
 
@@ -783,7 +791,7 @@ document.getElementById('searchInputMaterials').addEventListener('input', functi
     filterMaterialsTable('searchInputMaterials', 'materials-table-body');
 });
 
-// Слушатель кнопки "фильтр"
+// Слушатель кнопки "фильтр по категории"
 document.getElementById('CategoryFilterMaterials').addEventListener('click', function () {
     const dropdown = document.getElementById('categoryDropdown');
     const tooltip = document.getElementById('filterTooltip');
@@ -800,6 +808,25 @@ document.getElementById('CategoryFilterMaterials').addEventListener('click', fun
         tooltip.classList.add('opacity-0');
     }
 });
+
+
+// Слушатель галочки "фильтр - дефицит"
+document.getElementById("DeficitFilterBtn").addEventListener("click", () => {
+    const deficitIcon = document.getElementById("DeficitFilterIcon");
+
+    deficitFilterOn = !deficitFilterOn;
+
+    // переключение иконки
+    deficitIcon.src = deficitFilterOn
+        ? deficitIcon.dataset.iconOn
+        : deficitIcon.dataset.iconDefault;
+
+    // перерисовываем таблицу с учётом фильтра
+    const sortedItems = sortItems(allMaterialData);
+    renderTable(sortedItems);
+
+});
+
 
 // Слушатель кнопки сортировки поля "Наименование"
 document.getElementById('sortByName').addEventListener('click', () => {
@@ -833,7 +860,7 @@ document.getElementById('sortByQuantity').addEventListener('click', () => {
 
 });
 
-// Слушатель кнопки сортировки поля "На складе"
+// Слушатель кнопки сортировки поля "На складе" -  TODO это надо будет убрать, так как уже нет такого поля
 document.getElementById('sortByInStock').addEventListener('click', () => {
     if (currentSortField === 'Qnt') {
         currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
@@ -848,47 +875,11 @@ document.getElementById('sortByInStock').addEventListener('click', () => {
     filterMaterialsTable('searchInputMaterials', 'materials-table-body');
 });
 
+let rows = [];
 // Функция отрисовки таблицы "Материалы" при сортировке
-// function renderTable(items) {
-//     const tbody = document.getElementById('materials-table-body');
-//     tbody.innerHTML = '';
-//
-//     items.forEach(item => {
-//         const row = document.createElement('tr');
-//         // row.className = 'text-sm border-b hover:text-emerald-500';
-//         row.className = 'text-sm border-b hover:text-emerald-500 relative group';
-//
-//         // Добавляем класс к строке если условие выполняется
-//         if (parseFloat(item.Qnt) < parseFloat(item.Requirement)) {
-//             row.classList.add('text-red-300');
-//         }
-//
-//         // Затем добавляем содержимое
-//         row.innerHTML = `
-//             <td class="px-2 py-1 text-xs">${item.ComponentName}</td>
-//             <td class="px-2 py-1 text-center">${parseFloat(item.TotalQuantity).toLocaleString('ru-RU')}</td>
-//             <td class="px-2 py-1 text-center">${item.basic_unit}</td>
-// <!--            // <td class="px-2 py-1 text-center ${parseFloat(item.Qnt) <= 0 ? 'font-semibold text-red-300' : 'text-gray-400'}">${parseFloat(item.Qnt).toLocaleString('ru-RU')}-->
-// <!--            // <td class="px-2 py-1 text-center">${parseFloat(item.Requirement).toLocaleString('ru-RU')}</td>-->
-//
-//             <!-- тултипы -->
-//             <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 px-2 py-1 rounded-md bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition">
-//                 На складе: ${parseFloat(item.Qnt).toLocaleString('ru-RU')}
-//             </div>
-//
-//             <!-- тултип снизу -->
-//             <div class="absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 rounded-md bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition">
-//                 Потребность по всем заказам: ${parseFloat(item.Requirement).toLocaleString('ru-RU')}
-//             </div>
-//
-//         `;
-//
-//         tbody.appendChild(row);
-//     });
-// }
-
 function renderTable(items) {
     const tbody = document.getElementById('materials-table-body');
+
     tbody.innerHTML = '';
 
     // глобальные тултипы (одни на всю таблицу)
@@ -913,6 +904,11 @@ function renderTable(items) {
     }
 
     items.forEach(item => {
+
+        if (deficitFilterOn && parseFloat(item.Qnt) >= parseFloat(item.Requirement)) {
+            return; // пропускаем строки без дефицита
+        }
+
         const row = document.createElement('tr');
         row.className = 'text-sm border-b hover:text-emerald-500 cursor-pointer';
 

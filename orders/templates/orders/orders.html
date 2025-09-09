@@ -138,7 +138,7 @@
                                             id="searchInputMaterials"
                                             type="text"
                                             placeholder=""
-                                            class="bg-transparent w-[500px] focus:outline-none text-sm placeholder-gray-400 cursor-text overflow-hidden text-ellipsis">
+                                            class="bg-transparent w-[400px] focus:outline-none text-sm placeholder-gray-400 cursor-text overflow-hidden text-ellipsis">
                                 </div>
 
                                 <!-- Очистка поиска и фильтр -->
@@ -153,6 +153,25 @@
                                                 type="button"
                                                 onclick="clearInputMaterials('searchInputMaterials')">
                                             <img src="{% static 'icons/close2.ico' %}" alt="Очистить" class="w-4 h-4">
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Вертикальная черта -->
+                                    <div class="h-4 border-l border-gray-300"></div>
+                                    
+                                    <!-- Чекбокс фильтра дефицита -->
+                                    <div class="relative group inline-flex items-center">
+                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 px-2 py-1 rounded-lg text-sm text-white bg-gray-800 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 whitespace-nowrap">
+                                            Фильтр - дифецит
+                                        </div>
+
+                                        <button id="DeficitFilterBtn" class="flex items-center hover:text-gray-700" type="button">
+                                            <img id="DeficitFilterIcon"
+                                                 data-icon-default="{% static 'icons/checkboxOFF.ico' %}"
+                                                 data-icon-on="{% static 'icons/checkbox.ico' %}"
+                                                 src="{% static 'icons/checkboxOFF.ico' %}"
+                                                 alt="Фильтр дефицита"
+                                                 class="w-4 h-4">
                                         </button>
                                     </div>
                                     
